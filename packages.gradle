@@ -44,10 +44,10 @@ def BOM_map = [
     APACHE_MIRROR:  "http://apache.osuosl.org",
     APACHE_ARCHIVE: "http://archive.apache.org/dist",
     BASE_DIR:       projectDir.absolutePath,
-    BUILD_DIR:      projectDir.absolutePath + "/build",
-    OUTPUT_DIR:     projectDir.absolutePath + "/output",
-    DIST_DIR:       projectDir.absolutePath + "/dist",
-    DL_DIR:         projectDir.absolutePath + "/dl",
+    BUILD_DIR:      "/tmp/builddir" + "/build",
+    OUTPUT_DIR:     "/tmp/builddir" + "/output",
+    DIST_DIR:       "/tmp/builddir" + "/dist",
+    DL_DIR:         "/tmp/builddir" + "/dl",
     BIGTOP_BOM:     '',
     BIGTOP_BUILD_STAMP: 1
 ]
