@@ -18,6 +18,13 @@ set -ex
 
 . `dirname $0`/bigtop.bom
 
+# Dirty hack to avoid Unknown revision
+git init
+git remote add origin git://$(hostname)$(pwd)
+git checkout -b hadoop-${HADOOP_VERSION}
+git add .
+git commit -a -m "Temporary commit for build"
+
 #A hack to disable Codehaus repository since it's out of service
 sed --in-place -e '/http:\/\/repository.codehaus.org/,/<\/repository>/s/true/false/' pom.xml
 

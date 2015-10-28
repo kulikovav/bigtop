@@ -51,6 +51,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     end
     image.ssh.username = "root"
     image.ssh.port = 22
+    image.ssh.private_key_path = "./ssh_insecure_keys/vagrant"
   end
 
   # nodes definition
@@ -69,6 +70,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       end
       bigtop.ssh.username = "root"
       bigtop.ssh.port = 22
+      bigtop.ssh.private_key_path = "./ssh_insecure_keys/vagrant"
       bigtop.vm.hostname = "bigtop#{i}.docker"
       bigtop.vm.synced_folder "../../../", "/bigtop-home"
     end

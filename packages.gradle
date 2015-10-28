@@ -176,7 +176,7 @@ def genTasks = { target, variable ->
         refToCheckout: GIT_REF,
         dir: new File("${DL_DIR}/${dir}")
       )
-      delete("${DL_DIR}/${dir}/.git")
+      //delete("${DL_DIR}/${dir}/.git")
       exec {
         workingDir DL_DIR
         commandLine "tar -czf ${TARBALL_SRC} ${dir}".split()

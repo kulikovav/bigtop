@@ -13,10 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM bigtop/seed:centos-6.4
+FROM centos:6
 
 # enable ssh
-RUN yum -y install openssh-server openssh-clients sudo
+RUN yum -y install openssh-server openssh-clients sudo wget tar
 RUN sed -i.bak s/UsePAM\ yes/UsePAM\ no/ /etc/ssh/sshd_config
 RUN ssh-keygen -q -N "" -t dsa -f /etc/ssh/ssh_host_dsa_key
 RUN ssh-keygen -q -N "" -t rsa -f /etc/ssh/ssh_host_rsa_key
@@ -27,7 +27,7 @@ RUN sed -i.bak 's/requiretty/!requiretty/' /etc/sudoers
 # setup vagrant account
 RUN mkdir /root/.ssh/
 RUN chmod 0750 /root/.ssh
-RUN wget http://github.com/mitchellh/vagrant/raw/master/keys/vagrant.pub --no-check-certificate -O /root/.ssh/authorized_keys
+RUN wget https://raw.githubusercontent.com/kulikovav/bigtop/branch-1.0-hadoop-2.5.2/bigtop-deploy/vm/vagrant-puppet-docker/ssh_insecure_keys/vagrant.pub --no-check-certificate -O /root/.ssh/authorized_keys
 RUN chmod 0640 /root/.ssh/authorized_keys
 
 CMD /usr/sbin/sshd -D

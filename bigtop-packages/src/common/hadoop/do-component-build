@@ -21,6 +21,13 @@ if [ -z "$BUNDLE_SNAPPY" ] ; then
   [ -f /usr/lib64/libsnappy.so ] && BUNDLE_SNAPPY="-Dsnappy.prefix=x -Dbundle.snappy=true -Dsnappy.lib=/usr/lib64"
 fi
 
+# Dirty hack to avoid Unknown revision
+git init
+git remote add origin git://$(hostname)$(pwd)
+git checkout -b hadoop-${HADOOP_VERSION}
+git add .
+git commit -a -m "Temporary commit for build"
+
 mkdir build
 mkdir build/src
 
