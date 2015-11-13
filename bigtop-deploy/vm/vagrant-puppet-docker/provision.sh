@@ -18,6 +18,12 @@
 sysctl kernel.hostname=`hostname -f`
 
 # Unmount device /etc/hosts and replace it by a shared hosts file
+if [ -w /vagrant/hosts ]; then
+  _grep=$(grep 'localhost' /vagrant/hosts)
+  if [ -z "$_grep"  ]; then
+    echo '127.0.0.1   localhost localhost.localdomain' >> /vagrant/hosts
+  fi
+fi
 echo -e "`hostname -i`\t`hostname -f`" >> /vagrant/hosts
 umount /etc/hosts
 mv /etc/hosts /etc/hosts.bak
