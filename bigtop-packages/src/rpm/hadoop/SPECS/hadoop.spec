@@ -83,9 +83,9 @@
 # So for now brp-repack-jars is being deactivated until this is fixed.
 # See BIGTOP-294
 %define __os_install_post \
-    /usr/lib/rpm/redhat/brp-compress ; \
-    /usr/lib/rpm/redhat/brp-strip-static-archive %{__strip} ; \
-    /usr/lib/rpm/redhat/brp-strip-comment-note %{__strip} %{__objdump} ; \
+    %{_rpmconfigdir}/brp-compress ; \
+    %{_rpmconfigdir}/brp-strip-static-archive %{__strip} ; \
+    %{_rpmconfigdir}/brp-strip-comment-note %{__strip} %{__objdump} ; \
     /usr/lib/rpm/brp-python-bytecompile ; \
     %{nil}
 
@@ -651,6 +651,10 @@ fi
 %config(noreplace) %{etc_hadoop}/conf.empty/configuration.xsl
 %config(noreplace) %{etc_hadoop}/conf.empty/hadoop-env.sh
 %config(noreplace) %{etc_hadoop}/conf.empty/hadoop-policy.xml
+%config(noreplace) %{etc_hadoop}/conf.empty/kms-acls.xml
+%config(noreplace) %{etc_hadoop}/conf.empty/kms-env.sh
+%config(noreplace) %{etc_hadoop}/conf.empty/kms-log4j.properties
+%config(noreplace) %{etc_hadoop}/conf.empty/kms-site.xml
 %config(noreplace) /etc/default/hadoop
 /etc/bash_completion.d/hadoop
 %{lib_hadoop}/*.jar
@@ -660,6 +664,7 @@ fi
 %{lib_hadoop}/etc
 %{lib_hadoop}/libexec/hadoop-config.sh
 %{lib_hadoop}/libexec/hadoop-layout.sh
+%{lib_hadoop}/libexec/kms-config.sh
 %{bin_hadoop}/hadoop
 %{man_hadoop}/man1/hadoop.1.*
 %{man_hadoop}/man1/yarn.1.*
