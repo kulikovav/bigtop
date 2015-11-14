@@ -21,26 +21,18 @@ set -ex
 # Dirty hack to avoid Unknown revision
 git init
 git remote add origin git://$(hostname)$(pwd)
-git checkout -b hadoop-${HADOOP_VERSION}
+git checkout -b hbase-${HBASE_VERSION}
 git add .
 git commit -a -m "Temporary commit for build"
 
-#A hack to disable Codehaus repository since it's out of service
-sed --in-place -e '/http:\/\/repository.codehaus.org/,/<\/repository>/s/true/false/' pom.xml
-
 export MAVEN_OPTS="-Xmx1500m -Xms1500m -XX:MaxPermSize=256m"
 
-#An awful hack for BIGTOP-1429 to satisfy ASF CI build deps. resolution
-bash -x ./dev-support/generate-hadoopX-poms.sh $HBASE_VERSION $HBASE_VERSION-hadoop2
+mvn -DskipTests -Dslf4j.version=1.6.1         \
+    -Dhadoop-two.version=$HADOOP_VERSION      \
+    -Dzookeeper.version=$ZOOKEEPER_VERSION    \
+    -Dcheckstyle.skip=true                    \
+    clean site install assembly:single "$@"
 
-mvn -DskipTests -Dslf4j.version=1.6.1         \
-    -Dhadoop-two.version=$HADOOP_VERSION      \
-    -Dzookeeper.version=$ZOOKEEPER_VERSION    \
-    clean install -f pom.xml.hadoop2 "$@" &&  \
-mvn -DskipTests -Dslf4j.version=1.6.1         \
-    -Dhadoop-two.version=$HADOOP_VERSION      \
-    -Dzookeeper.version=$ZOOKEEPER_VERSION    \
-    install site assembly:single -f pom.xml.hadoop2 "$@"
 rm -rf build
 mkdir build
 tar -C build --strip-components=1 -xzf hbase-assembly/target/hbase*.tar.gz
