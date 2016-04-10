@@ -14,18 +14,25 @@
 # limitations under the License.
 
 class bigtop_toolchain::maven {
+  $mvnversion = '3.3.9'
+  $mvn = "apache-maven-$mvnversion"
 
-  include bigtop_toolchain::deps
-  exec {"/bin/tar xvzf /usr/src/apache-maven-${bigtop_toolchain::deps::maven_version}-bin.tar.gz":
+  $apache_prefix = nearest_apache_mirror()
+
+  exec {"/usr/bin/wget $apache_prefix/maven/maven-3/$mvnversion/binaries/$mvn-bin.tar.gz":
+    cwd     => "/usr/src",
+    unless  => "/usr/bin/test -f /usr/src/$mvn-bin.tar.gz",
+  }
+
+  exec {"/bin/tar xvzf /usr/src/$mvn-bin.tar.gz":
     cwd         => '/usr/local',
     refreshonly => true,
-    subscribe   => Exec["/usr/bin/wget $bigtop_toolchain::deps::apache_prefix/maven/maven-${bigtop_toolchain::deps::maven_major_version}/${bigtop_toolchain::deps::maven_version}/binaries/apache-maven-${bigtop_toolchain::deps::maven_version}-bin.tar.gz"],
-    require     => Exec["/usr/bin/wget $bigtop_toolchain::deps::apache_prefix/maven/maven-${bigtop_toolchain::deps::maven_major_version}/${bigtop_toolchain::deps::maven_version}/binaries/apache-maven-${bigtop_toolchain::deps::maven_version}-bin.tar.gz"],
+    require     => Exec["/usr/bin/wget $apache_prefix/maven/maven-3/$mvnversion/binaries/$mvn-bin.tar.gz"],
   }
   
   file {'/usr/local/maven':
     ensure  => link,
-    target  => "/usr/local/apache-maven-${bigtop_toolchain::deps::maven_version}",
-    require => Exec["/bin/tar xvzf /usr/src/apache-maven-${bigtop_toolchain::deps::maven_version}-bin.tar.gz"],
+    target  => "/usr/local/apache-maven-$mvnversion",
+    require => Exec["/bin/tar xvzf /usr/src/$mvn-bin.tar.gz"],
   }
 }
