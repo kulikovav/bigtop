@@ -170,7 +170,8 @@ class node_with_roles ($roles = hiera("bigtop::roles")) inherits hadoop_cluster_
     "tez",
     "ycsb",
     "kerberos",
-    "zeppelin"
+    "zeppelin",
+    "kafka"
   ]
 
   deploy_module { $modules:
