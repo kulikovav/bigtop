@@ -13,19 +13,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM bigtop/puppet:ubuntu-14.04
+FROM bigtop/puppet:centos-7
 
 # enable ssh
-RUN apt-get update && \
-    apt-get install -y openssh-server vim && \
-    mkdir -p /var/run/sshd && \
+RUN yum -y install openssh-server openssh-clients deltarpm vim && \
     # requiretty off
     sed -i.bak 's/requiretty/!requiretty/' /etc/sudoers && \
     # setup vagrant account
-    mkdir -p /root/.ssh && \
+    mkdir /root/.ssh && \
     chmod 0700 /root/.ssh && \
     wget http://github.com/mitchellh/vagrant/raw/master/keys/vagrant.pub --no-check-certificate -O /root/.ssh/authorized_keys && \
     chmod 0600 /root/.ssh/authorized_keys
 
 CMD /sbin/init
-
