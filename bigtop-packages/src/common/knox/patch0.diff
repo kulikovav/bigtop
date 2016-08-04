@@ -1940,7 +1940,7 @@ diff -uNr knox-0.7.0-a/gateway-service-definitions/src/main/resources/services/h
 +    <routes>
 +        <route path="/hbase/">
 +            <rewrite apply="HBASEUI/hbase/inbound/master/root" to="request.url"/>
-+            <rewrite apply="HBASEUI/hbase/outbound/master/root" to="request.url"/>
++            <rewrite apply="HBASEUI/hbase/outbound/master/root" to="request.body"/>
 +        </route>
 +        <route path="/hbase/**">
 +            <rewrite apply="HBASEUI/hbase/inbound/master/path" to="request.url"/>
@@ -2131,9 +2131,9 @@ diff -uNr knox-0.7.0-a/gateway-service-definitions/src/main/resources/services/h
 -    </routes>
 -    <dispatch classname="org.apache.hadoop.gateway.hdfs.dispatch.HdfsHttpClientDispatch" ha-classname="org.apache.hadoop.gateway.hdfs.dispatch.WebHdfsHaDispatch"/>
 -</service>
-diff -uNr knox-0.7.0-a/gateway-service-definitions/src/main/resources/services/hdfs-ui/2.4.1.1/rewrite.xml knox-0.7.0-b/gateway-service-definitions/src/main/resources/services/hdfs-ui/2.4.1.1/rewrite.xml
---- knox-0.7.0-a/gateway-service-definitions/src/main/resources/services/hdfs-ui/2.4.1.1/rewrite.xml	1970-01-01 04:00:00.000000000 +0400
-+++ knox-0.7.0-b/gateway-service-definitions/src/main/resources/services/hdfs-ui/2.4.1.1/rewrite.xml	2016-08-02 13:20:41.015813409 +0400
+diff -uNr knox-0.7.0-a/gateway-service-definitions/src/main/resources/services/hdfs-ui/2.7.2.1/rewrite.xml knox-0.7.0-b/gateway-service-definitions/src/main/resources/services/hdfs-ui/2.7.2.1/rewrite.xml
+--- knox-0.7.0-a/gateway-service-definitions/src/main/resources/services/hdfs-ui/2.7.2.1/rewrite.xml	1970-01-01 04:00:00.000000000 +0400
++++ knox-0.7.0-b/gateway-service-definitions/src/main/resources/services/hdfs-ui/2.7.2.1/rewrite.xml	2016-08-02 13:20:41.015813409 +0400
 @@ -0,0 +1,122 @@
 +<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 +<!--
