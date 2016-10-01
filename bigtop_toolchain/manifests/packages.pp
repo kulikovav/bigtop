@@ -14,29 +14,54 @@
 # limitations under the License.
 
 class bigtop_toolchain::packages {
-   case $operatingsystem{
-     /(?i:(centos|fedora))/: {
-       # Fedora 20 and CentOS 7 or above are using mariadb, while CentOS 6 is still mysql
-       if ($operatingsystem == "CentOS") and ($operatingsystemmajrelease <=6) {
-         $mysql_devel="mysql-devel"
-       } else {
-         $mysql_devel="mariadb-devel"
-       }
-       $pkgs = [ "unzip", "curl", "wget", "git", "make", "cmake", "autoconf", "automake", "libtool", "gcc", "gcc-c++", "fuse", "createrepo", "lzo-devel", "fuse-devel", "cppunit-devel", "openssl-devel", "python-devel", "python-setuptools", "libxml2-devel", "libxslt-devel", "cyrus-sasl-devel", "sqlite-devel", "openldap-devel", $mysql_devel, "rpm-build", "redhat-rpm-config", "fuse-libs", "asciidoc", "xmlto", "libyaml-devel", "gmp-devel", "snappy-devel", "boost-devel", "xfsprogs-devel", "libuuid-devel", "bzip2-devel" ]
-     }
-      # fix package dependencies: BIGTOP-2120 and BIGTOP-2152
-      exec { '/usr/bin/zypper remove -y krb5-mini':
-      } -> exec {'/usr/bin/zypper install -y libopenssl-devel':
-      } -> Package <| |>
-    }
-    Amazon: {                 $pkgs = [ "unzip", "curl", "wget", "git", "make", "cmake", "autoconf", "automake", "libtool", "gcc", "gcc-c++", "fuse", "createrepo", "lzo-devel", "fuse-devel", "openssl-devel", "rpm-build", "system-rpm-config", "fuse-libs","gmp-devel", "snappy-devel", "bzip2-devel" ] }
-
-      exec { "apt-update":
-        command => "/usr/bin/apt-get update"
+  case $operatingsystem{
+    /(?i:(centos|fedora))/: {
+      # Fedora 20 and CentOS 7 or above are using mariadb, while CentOS 6 is still mysql
+      if ($operatingsystem == "CentOS") and ($operatingsystemmajrelease <=6) {
+        $mysql_devel="mysql-devel"
+      } else {
+        $mysql_devel="mariadb-devel"
       }
-      Exec["apt-update"] -> Package <| |>
+      $pkgs = [
+        "unzip",
+        "curl",
+        "wget",
+        "git",
+        "make",
+        "cmake",
+        "autoconf",
+        "automake",
+        "libtool",
+        "gcc",
+        "gcc-c++",
+        "fuse",
+        "createrepo",
+        "lzo-devel",
+        "fuse-devel",
+        "cppunit-devel",
+        "openssl-devel",
+        "python-devel",
+        "python-setuptools",
+        "libxml2-devel",
+        "libxslt-devel",
+        "cyrus-sasl-devel",
+        "sqlite-devel",
+        "openldap-devel",
+        $mysql_devel,
+        "rpm-build",
+        "redhat-rpm-config",
+        "fuse-libs",
+        "asciidoc",
+        "xmlto",
+        "libyaml-devel",
+        "gmp-devel",
+        "snappy-devel",
+        "boost-devel",
+        "xfsprogs-devel",
+        "libuuid-devel",
+        "bzip2-devel"
+      ]
     }
-  }
   package { $pkgs:
     ensure => installed,
   }
