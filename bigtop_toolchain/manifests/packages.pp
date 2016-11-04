@@ -62,6 +62,29 @@ class bigtop_toolchain::packages {
         "bzip2-devel"
       ]
     }
+    Amazon: { $pkgs = [
+      "unzip",
+      "curl",
+      "wget",
+      "git",
+      "make",
+      "cmake",
+      "autoconf",
+      "automake",
+      "libtool",
+      "gcc",
+      "gcc-c++",
+      "fuse",
+      "createrepo",
+      "lzo-devel",
+      "fuse-devel",
+      "openssl-devel",
+      "rpm-build",
+      "system-rpm-config",
+      "fuse-libs","gmp-devel",
+      "snappy-devel",
+      "bzip2-devel"
+    ] }
   package { $pkgs:
     ensure => installed,
   }
