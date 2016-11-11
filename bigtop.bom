@@ -91,7 +91,7 @@ bigtop {
   */
   dependencies = [
     zookeeper:['hadoop', 'hbase'],
-    hadoop:['hbase', 'pig', 'hive', 'tez', 'oozie', 'flume', 'spark', 'ycsb', 'zeppelin'],
+    hadoop:['hbase', 'pig', 'hive', 'tez', 'oozie', 'flume', 'spark', 'ycsb', 'zeppelin', 'spark1'],
     hbase:['ycsb','hive'],
     pig:['oozie'],
     hive:['oozie', 'pig','zeppelin'],
@@ -189,6 +189,69 @@ bigtop {
                 site = "${apache.APACHE_MIRROR}/${download_path}"
                 archive = "${apache.APACHE_ARCHIVE}/${download_path}" }
     }
+<<<<<<< HEAD
+=======
+    'giraph' {
+      name    = 'giraph'
+      relNotes = 'Apache Giraph'
+      version { base = '1.1.0'; pkg = base; release = 1 }
+      tarball { destination = "$name-${version.base}.tar.gz"
+                source      = "$name-dist-${version.base}-src.tar.gz" }
+      url     { download_path = "/$name/$name-${version.base}/"
+                site = "${apache.APACHE_MIRROR}/${download_path}"
+                archive = "${apache.APACHE_ARCHIVE}/${download_path}" }
+    }
+    'hue' {
+      name    = 'hue'
+      relNotes = 'Hadoop User Interface'
+      version { base = '3.9.0'; pkg = base; release = 1 }
+      tarball { destination = "$name-${version.base}.tar.gz"
+                source      = "release-${version.base}.tar.gz" }
+      url     { site = "https://github.com/cloudera/hue/archive"
+                archive = site }
+    }
+    'datafu' {
+      name    = 'datafu'
+      pkg     = 'pig-udf-datafu'
+      relNotes = 'Pig UDF Datafu'
+      version { base = '1.0.0'; pkg = base; release = 1 }
+      tarball { destination = "$name-${version.base}.tar.gz"
+                source      = "${version.base}.tar.gz" }
+      url     { site = "https://github.com/linkedin/datafu/archive"
+                archive = site }
+    }
+    'solr' {
+      name    = 'solr'
+      relNotes = 'Apache Solr'
+      version { base = '4.10.4'; pkg = base; release = 1 }
+      tarball { destination = "$name-${version.base}-src.tgz"
+                source      = destination }
+      url     { download_path = "lucene/$name/${version.base}"
+                site = "${apache.APACHE_MIRROR}/${download_path}"
+                archive = "${apache.APACHE_ARCHIVE}/${download_path}" }
+    }
+    'crunch' {
+      name    = 'crunch'
+      relNotes = 'Apache Crunch'
+      version { base = '0.13.0'; pkg = base; release = 1 }
+      tarball { destination = "apache-$name-${version.base}-src.tar.gz"
+                source      = destination }
+      url     { download_path = "/$name/$name-${version.base}/"
+                site = "${apache.APACHE_MIRROR}/${download_path}"
+                archive = "${apache.APACHE_ARCHIVE}/${download_path}" }
+    }
+    'spark1' {
+      name    = 'spark1'
+      pkg     = 'spark-core'
+      relNotes = 'Apache Spark'
+      version { base = '1.6.2'; pkg = base; release = 1 }
+      tarball { destination = "spark${version.base}.tar.gz"
+                source      = "spark-${version.base}.tgz" }
+      url     { download_path = "/spark/spark-${version.base}"
+                site = "${apache.APACHE_MIRROR}/${download_path}"
+                archive = "${apache.APACHE_ARCHIVE}/${download_path}" }
+    }
+>>>>>>> 037da0d... adding spark 1.x family support
     'spark' {
       name    = 'spark'
       pkg     = 'spark-core'
@@ -196,7 +259,7 @@ bigtop {
       version { base = '1.6.2'; pkg = base; release = 1 }
       tarball { destination = "$name-${version.base}.tar.gz"
                 source      = "$name-${version.base}.tgz" }
-      url     { download_path = "/$name/$name-${version.base}"
+      url     { download_path = "/spark/spark-${version.base}"
                 site = "${apache.APACHE_MIRROR}/${download_path}"
                 archive = "${apache.APACHE_ARCHIVE}/${download_path}" }
     }
