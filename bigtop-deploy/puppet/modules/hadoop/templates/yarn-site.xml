@@ -170,6 +170,12 @@
   </property>
 
   <property>
+    <description>Whether virtual memory limits will be enforced for containers.</description>
+    <name>yarn.nodemanager.vmem-check-enabled</name>
+    <value>false</value>
+  </property>
+
+  <property>
     <description>Classpath for typical applications.</description>
      <name>yarn.application.classpath</name>
      <value>
