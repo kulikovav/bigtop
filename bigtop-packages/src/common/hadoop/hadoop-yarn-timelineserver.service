@@ -1,0 +1,27 @@
+[Unit]
+Description=The Hadoop timelineserver daemon
+After=network.target
+After=NetworkManager.target
+
+[Service]
+Type=forking
+EnvironmentFile=-/etc/default/hadoop-yarn
+EnvironmentFile=-/etc/default/hadoop-yarn-timelineserver
+ExecStart=/usr/lib/hadoop-yarn/sbin/yarn-daemon.sh --config /etc/hadoop/conf start timelineserver
+ExecStop=/usr/lib/hadoop-yarn/sbin/yarn-daemon.sh --config /etc/hadoop/conf stop timelineserver
+User=yarn
+Group=hadoop
+PIDFile=/var/run/hadoop-yarn/yarn-yarn-timelineserver.pid
+LimitNOFILE=32768
+LimitNPROC=65536
+SuccessExitStatus=143
+
+#######################################
+# Note: Below are cgroup options
+#######################################
+#Delegate=true
+#CPUAccounting=true
+#CPUShares=1024
+
+[Install]
+WantedBy=multi-user.target

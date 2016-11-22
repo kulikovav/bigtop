@@ -1,0 +1,27 @@
+[Unit]
+Description=The Hadoop HDFS journalnode daemon
+After=network.target
+After=NetworkManager.target
+
+[Service]
+Type=forking
+EnvironmentFile=-/etc/default/hadoop-hdfs
+EnvironmentFile=-/etc/default/hadoop-hdfs-journalnode
+ExecStart=/usr/lib/hadoop/sbin/hadoop-daemon.sh --config /opt/hadoop/conf start journalnode
+ExecStop=/usr/lib/hadoop/sbin/hadoop-daemon.sh --config /opt/hadoop/conf stop journalnode
+User=hadoop
+Group=hadoop
+PIDFile=/var/run/hadoop-hdfs/hadoop-hadoop-journalnode.pid
+LimitNOFILE=32768
+LimitNPROC=65536
+SuccessExitStatus=143
+
+#######################################
+# Note: Below are cgroup options
+#######################################
+#Delegate=true
+#CPUAccounting=true
+#CPUShares=1024
+
+[Install]
+WantedBy=multi-user.target

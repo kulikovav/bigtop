@@ -1,0 +1,27 @@
+[Unit]
+Description=The Hadoop proxyserver daemon
+After=network.target
+After=NetworkManager.target
+
+[Service]
+Type=forking
+EnvironmentFile=-/etc/default/hadoop-yarn
+EnvironmentFile=-/etc/default/hadoop-yarn-proxyserver
+ExecStart=/usr/lib/hadoop-yarn/sbin/yarn-daemon.sh --config /etc/hadoop/conf start proxyserver
+ExecStop=/usr/lib/hadoop-yarn/sbin/yarn-daemon.sh --config /etc/hadoop/conf stop proxyserver
+User=yarn
+Group=hadoop
+PIDFile=/var/run/hadoop-yarn/yarn-yarn-proxyserver.pid
+LimitNOFILE=32768
+LimitNPROC=65536
+SuccessExitStatus=143
+
+#######################################
+# Note: Below are cgroup options
+#######################################
+#Delegate=true
+#CPUAccounting=true
+#CPUShares=1024
+
+[Install]
+WantedBy=multi-user.target

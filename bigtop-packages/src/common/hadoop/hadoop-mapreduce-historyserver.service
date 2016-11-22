@@ -1,0 +1,28 @@
+[Unit]
+Description=The Hadoop Historyserver daemon
+After=network.target
+After=NetworkManager.target
+
+[Service]
+Type=forking
+EnvironmentFile=-/etc/default/hadoop
+EnvironmentFile=-/etc/default/hadoop-mapreduce-historyserver
+ExecStart=/usr/lib/hadoop-mapreduce/sbin/mr-jobhistory-daemon.sh --config /etc/hadoop/conf start historyserver
+ExecStop=/usr/lib/hadoop-mapreduce/sbin/mr-jobhistory-daemon.sh --config /etc/hadoop/conf stop historyserver
+Restart=on-failure
+SuccessExitStatus=143
+User=mapred
+Group=hadoop
+PIDFile=/var/run/hadoop-mapreduce/mapred-mapred-historyserver.pid
+LimitNOFILE=32768
+LimitNPROC=65536
+
+#######################################
+# Note: Below are cgroup options
+#######################################
+#Delegate=true
+#CPUAccounting=true
+#CPUShares=1024
+
+[Install]
+WantedBy=multi-user.target

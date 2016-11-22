@@ -1,0 +1,21 @@
+[Unit]
+Description=The Hadoop HDFS namenode daemon
+After=network.target
+After=NetworkManager.target
+
+[Service]
+Type=simple
+EnvironmentFile=-/etc/sysconfig/hadoop
+ExecStart=/etc/init.d/%i-$HADOOP_VERSION start
+ExecStop=/etc/init.d/%i-$HADOOP_VERSION stop
+PIDFile=/var/run/hadoop-hdfs/hadoop-hdfs-namenode.pid
+
+#######################################
+# Note: Below are cgroup options
+#######################################
+#Delegate=true
+#CPUAccounting=true
+#CPUShares=1024
+
+[Install]
+WantedBy=multi-user.target

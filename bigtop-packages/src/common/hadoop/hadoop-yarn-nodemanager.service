@@ -1,0 +1,28 @@
+[Unit]
+Description=The Hadoop YARN nodemanager daemon
+After=network.target
+After=NetworkManager.target
+
+[Service]
+Type=forking
+EnvironmentFile=-/etc/default/hadoop-yarn
+EnvironmentFile=-/etc/default/hadoop-yarn-nodemanager
+ExecStart=/usr/lib/hadoop-yarn/sbin/yarn-daemon.sh --config /etc/hadoop/conf start nodemanager
+ExecStop=/usr/lib/hadoop-yarn/sbin/yarn-daemon.sh --config /etc/hadoop/conf stop nodemanager
+Restart=on-failure
+SuccessExitStatus=143
+User=yarn
+Group=hadoop
+PIDFile=/var/run/hadoop-yarn/yarn-yarn-nodemanager.pid
+LimitNOFILE=32768
+LimitNPROC=65536
+
+#######################################
+# Note: Below are cgroup options
+#######################################
+#Delegate=true
+#CPUAccounting=true
+#CPUShares=1024
+
+[Install]
+WantedBy=multi-user.target

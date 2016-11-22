@@ -1,0 +1,1 @@
+export HADOOP_VERSION=__pkg_version__

@@ -73,10 +73,6 @@
 %global hadoop_arch Linux-amd64-64
 %endif
 
-# CentOS 5 does not have any dist macro
-# So I will suppose anything that is not Mageia or a SUSE will be a RHEL/CentOS/Fedora
-%if %{!?suse_version:1}0 && %{!?mgaversion:1}0
-
 # FIXME: brp-repack-jars uses unzip to expand jar files
 # Unfortunately aspectjtools-1.6.5.jar pulled by ivy contains some files and directories without any read permission
 # and make whole process to fail.
@@ -97,11 +93,6 @@
 
 
 %if  %{?suse_version:1}0
-
-# Only tested on openSUSE 11.4. le'ts update it for previous release when confirmed
-%if 0%{suse_version} > 1130
-%define suse_check \# Define an empty suse_check for compatibility with older sles
-%endif
 
 # Deactivating symlinks checks
 %define __os_install_post \
@@ -168,7 +159,16 @@ Source25: httpfs-tomcat-deployment.sh
 Source26: yarn.1
 Source27: hdfs.1
 Source28: mapred.1
-Source29: hadoop-yarn-timelineserver.svc
+Source29: hadoop-yarn-timelineserver.service
+Source30: hadoop-hdfs-namenode.service
+Source31: hadoop-hdfs-datanode.service
+Source32: hadoop-hdfs-secondarynamenode.service
+Source33: hadoop-mapreduce-historyserver.service
+Source34: hadoop-yarn-resourcemanager.service
+Source35: hadoop-yarn-nodemanager.service
+Source36: hadoop-hdfs-zkfc.service
+Source37: hadoop-hdfs-journalnode.service
+Source38: hadoop.sysconfig
 #BIGTOP_PATCH_FILES
 Buildroot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id} -u -n)
 BuildRequires: fuse-devel, fuse, cmake
@@ -510,12 +510,22 @@ env HADOOP_VERSION=%{hadoop_base_version} bash %{SOURCE2} \
 echo 'export JSVC_HOME=%{libexecdir}/bigtop-utils' >> $RPM_BUILD_ROOT/etc/default/hadoop
 %__cp $RPM_SOURCE_DIR/%{name}-fuse.default $RPM_BUILD_ROOT/etc/default/%{name}-fuse
 
+%__install -m 0644 ${SOURCE36} $RPM_BUILD_ROOT/etc/sysconfig/hadoop
+sed -i 's/__pkg_version__/%{hadoop_version}/g' $RPM_BUILD_ROOT/etc/sysconfig/hadoop
+
+%if 0%{?rhel} = 7
+install -d -m 0755 %{buildroot}%{_unitdir}
+%endif
 # Generate the init.d scripts
 for service in %{hadoop_services}
 do
+       %if 0%{?rhel} = 7
+       bash %{SOURCE11} $RPM_SOURCE_DIR/%{name}-${service}.svc rpm $RPM_BUILD_ROOT/%{initd_dir}/%{name}-${service}-%{hadoop_version}
+       %__install -m 0644 $RPM_SOURCE_DIR/%{name}-${service}.service $RPM_BUILD_ROOT/%{_unitdir}/%{name}-${service}.service
+       %else
        bash %{SOURCE11} $RPM_SOURCE_DIR/%{name}-${service}.svc rpm $RPM_BUILD_ROOT/%{initd_dir}/%{name}-${service}
-       cp $RPM_SOURCE_DIR/${service/-*/}.default $RPM_BUILD_ROOT/etc/default/%{name}-${service}
-       chmod 644 $RPM_BUILD_ROOT/etc/default/%{name}-${service}
+       %endif
+       %__install -m 0644 $RPM_SOURCE_DIR/${service/-*/}.default $RPM_BUILD_ROOT/etc/default/%{name}-${service}
 done
 
 # Install security limits
@@ -656,6 +666,7 @@ fi
 %config(noreplace) %{etc_hadoop}/conf.empty/kms-log4j.properties
 %config(noreplace) %{etc_hadoop}/conf.empty/kms-site.xml
 %config(noreplace) /etc/default/hadoop
+%config /etc/sysconfig/hadoop
 /etc/bash_completion.d/hadoop
 %{lib_hadoop}/*.jar
 %{lib_hadoop}/lib
@@ -693,19 +704,37 @@ fi
 %define service_macro() \
 %files %1 \
 %defattr(-,root,root) \
+%if 0%{?rhel} = 7
+%{initd_dir}/%{name}-%1-%{hadoop_version} \
+%{_unitdir}/%{name}-%1 \
+%else
 %{initd_dir}/%{name}-%1 \
+%endif
 %config(noreplace) /etc/default/%{name}-%1 \
 %post %1 \
+%if 0%{?rhel} = 7
+systemctl daemon-reload %{name}-%1.service \
+%else
 chkconfig --add %{name}-%1 \
+%endif
 \
 %preun %1 \
 if [ $1 = 0 ]; then \
+%if 0%{?rhel} = 7
+  systemctl disable --no-reload %{name}-%1 > /dev/null 2>&1 || : \
+  systemctl stop %{name}-%1 > /dev/null 2>&1 || : \
+%else
   service %{name}-%1 stop > /dev/null 2>&1 \
   chkconfig --del %{name}-%1 \
+%endif
 fi \
 %postun %1 \
 if [ $1 -ge 1 ]; then \
+%if 0%{?rhel} = 7
+  systemctl try-restart %{name}-%1 >/dev/null 2>&1 || : \
+%else
   service %{name}-%1 condrestart >/dev/null 2>&1 \
+%endif
 fi
 
 %service_macro hdfs-namenode
