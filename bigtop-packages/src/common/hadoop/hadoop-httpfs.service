@@ -1,13 +1,13 @@
 [Unit]
-Description=The Hadoop YARN nodemanager daemon
+Description=The Hadoop httpfs daemon
 After=network.target
 After=NetworkManager.target
 
 [Service]
 Type=simple
-ExecStart=/usr/lib/hadoop/libexec/hadoop-yarn-nodemanager start
-ExecStop=/usr/lib/hadoop/libexec/hadoop-yarn-nodemanager stop
-PIDFile=/var/run/hadoop-yarn/yarn-yarn-nodemanager.pid
+ExecStart=/usr/lib/hadoop/libexec/hadoop-httpfs start
+ExecStop=/usr/lib/hadoop/libexec/hadoop-httpfs stop
+PIDFile=/var/run/hadoop-httpfs/hadoop-httpfs-httpfs.pid
 
 #######################################
 # Note: Below are cgroup options

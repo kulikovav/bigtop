@@ -4,17 +4,10 @@ After=network.target
 After=NetworkManager.target
 
 [Service]
-Type=forking
-EnvironmentFile=-/etc/default/hadoop-yarn
-EnvironmentFile=-/etc/default/hadoop-yarn-resourcemanager
-ExecStart=/usr/lib/hadoop-yarn/sbin/yarn-daemon.sh --config /etc/hadoop/conf start resourcemanager
-ExecStop=/usr/lib/hadoop-yarn/sbin/yarn-daemon.sh --config /etc/hadoop/conf stop resourcemanager
-User=yarn
-Group=hadoop
+Type=simple
+ExecStart=/usr/lib/hadoop/libexec/hadoop-yarn-resourcemanager start
+ExecStop=/usr/lib/hadoop/libexec/hadoop-yarn-resourcemanager stop
 PIDFile=/var/run/hadoop-yarn/yarn-yarn-resourcemanager.pid
-LimitNOFILE=32768
-LimitNPROC=65536
-SuccessExitStatus=143
 
 #######################################
 # Note: Below are cgroup options

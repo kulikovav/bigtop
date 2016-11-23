@@ -4,17 +4,10 @@ After=network.target
 After=NetworkManager.target
 
 [Service]
-Type=forking
-EnvironmentFile=-/etc/sysconfig/hadoop-hdfs
-EnvironmentFile=-/etc/sysconfig/hadoop-hdfs-zkfc
-ExecStart=/usr/lib/hadoop/sbin/hadoop-daemon.sh --config /etc/hadoop/conf start zkfc
-ExecStop=/usr/lib/hadoop/sbin/hadoop-daemon.sh --config /etc/hadoop/conf stop zkfc
-User=hdfs
-Group=hadoop
+Type=simple
+ExecStart=/usr/lib/hadoop/libexec/hadoop-hdfs-datanode start
+ExecStop=/usr/lib/hadoop/libexec/hadoop-hdfs-datanode stop
 PIDFile=/var/run/hadoop-hdfs/hadoop-hdfs-zkfc.pid
-LimitNOFILE=32768
-LimitNPROC=65536
-SuccessExitStatus=143
 
 #######################################
 # Note: Below are cgroup options

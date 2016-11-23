@@ -73,6 +73,10 @@
 %global hadoop_arch Linux-amd64-64
 %endif
 
+# CentOS 5 does not have any dist macro
+# So I will suppose anything that is not Mageia or a SUSE will be a RHEL/CentOS/Fedora
+%if %{!?suse_version:1}0 && %{!?mgaversion:1}0
+
 # FIXME: brp-repack-jars uses unzip to expand jar files
 # Unfortunately aspectjtools-1.6.5.jar pulled by ivy contains some files and directories without any read permission
 # and make whole process to fail.
@@ -159,25 +163,33 @@ Source25: httpfs-tomcat-deployment.sh
 Source26: yarn.1
 Source27: hdfs.1
 Source28: mapred.1
-Source29: hadoop-yarn-timelineserver.service
-Source30: hadoop-hdfs-namenode.service
-Source31: hadoop-hdfs-datanode.service
-Source32: hadoop-hdfs-secondarynamenode.service
-Source33: hadoop-mapreduce-historyserver.service
-Source34: hadoop-yarn-resourcemanager.service
-Source35: hadoop-yarn-nodemanager.service
-Source36: hadoop-hdfs-zkfc.service
-Source37: hadoop-hdfs-journalnode.service
-Source38: hadoop.sysconfig
-#BIGTOP_PATCH_FILES
+Source29: hadoop-yarn-timelineserver.svc
+Source30: hadoop-yarn-timelineserver.service
+Source31: hadoop-hdfs-namenode.service
+Source32: hadoop-hdfs-datanode.service
+Source33: hadoop-hdfs-secondarynamenode.service
+Source34: hadoop-mapreduce-historyserver.service
+Source35: hadoop-yarn-resourcemanager.service
+Source36: hadoop-yarn-nodemanager.service
+Source37: hadoop-hdfs-zkfc.service
+Source38: hadoop-hdfs-journalnode.service
+Source39: tmpfiles.tmpl
+Patch0: patch0.diff
 Buildroot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id} -u -n)
 BuildRequires: fuse-devel, fuse, cmake
-Requires: coreutils, /usr/sbin/useradd, /usr/sbin/usermod, /sbin/chkconfig, /sbin/service, bigtop-utils >= 0.7, zookeeper >= 3.4.0
+Requires: coreutils, /usr/sbin/useradd, /usr/sbin/usermod, bigtop-utils >= 0.7, zookeeper >= 3.4.0
 Requires: psmisc, %{netcat_package}
 # Sadly, Sun/Oracle JDK in RPM form doesn't provide libjvm.so, which means we have
 # to set AutoReq to no in order to minimize confusion. Not ideal, but seems to work.
 # I wish there was a way to disable just one auto dependency (libjvm.so)
 AutoReq: no
+
+%if 0%{?rhel} >= 7
+Requires: systemd
+BuildRequires: systemd-units
+%else
+Requires: /sbin/chkconfig, /sbin/service
+%endif
 
 %if  %{?suse_version:1}0
 BuildRequires: pkg-config, libfuse2, libopenssl-devel, gcc-c++
@@ -461,7 +473,7 @@ These projects (enumerated below) allow HDFS to be mounted (on most flavors of U
 %prep
 %setup -n %{name}-%{hadoop_base_version}-src
 
-#BIGTOP_PATCH_COMMANDS
+%patch0 -p1
 %build
 # This assumes that you installed Java JDK 6 and set JAVA_HOME
 # This assumes that you installed Forrest and set FORREST_HOME
@@ -510,17 +522,14 @@ env HADOOP_VERSION=%{hadoop_base_version} bash %{SOURCE2} \
 echo 'export JSVC_HOME=%{libexecdir}/bigtop-utils' >> $RPM_BUILD_ROOT/etc/default/hadoop
 %__cp $RPM_SOURCE_DIR/%{name}-fuse.default $RPM_BUILD_ROOT/etc/default/%{name}-fuse
 
-%__install -m 0644 ${SOURCE36} $RPM_BUILD_ROOT/etc/sysconfig/hadoop
-sed -i 's/__pkg_version__/%{hadoop_version}/g' $RPM_BUILD_ROOT/etc/sysconfig/hadoop
-
-%if 0%{?rhel} = 7
-install -d -m 0755 %{buildroot}%{_unitdir}
+%if 0%{?rhel} && 0%{?rhel} >= 7
+%__install -d -m 0755 %{buildroot}%{_unitdir}
 %endif
-# Generate the init.d scripts
+# Generate the init.d scripts, unit files
 for service in %{hadoop_services}
 do
-       %if 0%{?rhel} = 7
-       bash %{SOURCE11} $RPM_SOURCE_DIR/%{name}-${service}.svc rpm $RPM_BUILD_ROOT/%{initd_dir}/%{name}-${service}-%{hadoop_version}
+       %if 0%{?rhel} >= 7
+       bash %{SOURCE11} $RPM_SOURCE_DIR/%{name}-${service}.svc rpm $RPM_BUILD_ROOT/%{lib_hadoop}/libexec/%{name}-${service}
        %__install -m 0644 $RPM_SOURCE_DIR/%{name}-${service}.service $RPM_BUILD_ROOT/%{_unitdir}/%{name}-${service}.service
        %else
        bash %{SOURCE11} $RPM_SOURCE_DIR/%{name}-${service}.svc rpm $RPM_BUILD_ROOT/%{initd_dir}/%{name}-${service}
@@ -548,10 +557,19 @@ done
 %__install -d -m 0755 $RPM_BUILD_ROOT/%{log_mapreduce}
 %__install -d -m 0755 $RPM_BUILD_ROOT/%{log_httpfs}
 # /var/run/*
+%if 0%{?rhel} >= 7
+%__install -d -m 0755 $RPM_BUILD_ROOT/%{_sysconfdir}/tmpfiles.d
+sed "s|__RUN_DIR__|%{run_yarn}|;s|__OWNER__|yarn|;s|__GROUP__|yarn|;s|__PERM__|0755|" %{SOURCE39} > $RPM_BUILD_ROOT/%{_sysconfdir}/tmpfiles.d/%{name}-yarn.conf
+sed "s|__RUN_DIR__|%{run_hdfs}|;s|__OWNER__|hdfs|;s|__GROUP__|hdfs|;s|__PERM__|0755|" %{SOURCE39} > $RPM_BUILD_ROOT/%{_sysconfdir}/tmpfiles.d/%{name}-hdfs.conf
+sed "s|__RUN_DIR__|%{run_mapreduce}|;s|__OWNER__|mapred|;s|__GROUP__|hadoop|;s|__PERM__|0775|" %{SOURCE39} > $RPM_BUILD_ROOT/%{_sysconfdir}/tmpfiles.d/%{name}-mapreduce.conf
+sed "s|__RUN_DIR__|%{run_httpfs}|;s|__OWNER__|httpfs|;s|__GROUP__|httpfs|;s|__PERM__|0755|" %{SOURCE39} > $RPM_BUILD_ROOT/%{_sysconfdir}/tmpfiles.d/%{name}-httpfs.conf
+%else
 %__install -d -m 0755 $RPM_BUILD_ROOT/%{run_yarn}
 %__install -d -m 0755 $RPM_BUILD_ROOT/%{run_hdfs}
 %__install -d -m 0755 $RPM_BUILD_ROOT/%{run_mapreduce}
 %__install -d -m 0755 $RPM_BUILD_ROOT/%{run_httpfs}
+%endif%
+
 
 %pre
 getent group hadoop >/dev/null || groupadd -r hadoop
@@ -574,13 +592,26 @@ getent passwd mapred >/dev/null || /usr/sbin/useradd --comment "Hadoop MapReduce
 
 %post
 %{alternatives_cmd} --install %{config_hadoop} %{name}-conf %{etc_hadoop}/conf.empty 10
+%if 0%{?rhel} >= 7
+for service in %{hdfs_services} %{yarn_services} %{mapreduce_services}
+do
+systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/%{name}-${service/-*/}
+done
+%endif
 
 %post httpfs
 %{alternatives_cmd} --install %{config_httpfs} %{name}-httpfs-conf %{etc_httpfs}/conf.empty 10
 %{alternatives_cmd} --install %{tomcat_deployment_httpfs} %{name}-httpfs-tomcat-conf %{etc_httpfs}/tomcat-conf.dist 10
 %{alternatives_cmd} --install %{tomcat_deployment_httpfs} %{name}-httpfs-tomcat-conf %{etc_httpfs}/tomcat-conf.https 5
+%if 0%{?rhel} >= 7
+systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/%{name}-httpfs
+%endif
 
+%if 0%{?rhel} >= 7
+systemctl daemon-reload
+%else
 chkconfig --add %{name}-httpfs
+%endif
 
 %preun
 if [ "$1" = 0 ]; then
@@ -589,8 +620,13 @@ fi
 
 %preun httpfs
 if [ $1 = 0 ]; then
+%if 0%{?rhel} >= 7
+  systemctl disable --no-reload ${name}-httpfs > /dev/null 2>&1 || :
+  systemctl stop ${name}-httpfs > /dev/null 2>&1 || :
+%else
   service %{name}-httpfs stop > /dev/null 2>&1
   chkconfig --del %{name}-httpfs
+%endif
   %{alternatives_cmd} --remove %{name}-httpfs-conf %{etc_httpfs}/conf.empty || :
   %{alternatives_cmd} --remove %{name}-httpfs-tomcat-conf %{etc_httpfs}/tomcat-conf.dist || :
   %{alternatives_cmd} --remove %{name}-httpfs-tomcat-conf %{etc_httpfs}/tomcat-conf.https || :
@@ -598,7 +634,11 @@ fi
 
 %postun httpfs
 if [ $1 -ge 1 ]; then
+%if 0%{?rhel} >= 7
+  systemctl try-restart %{name}-httpfs > /dev/null 2>&1 || : 
+%else
   service %{name}-httpfs condrestart >/dev/null 2>&1
+%endif
 fi
 
 
@@ -609,11 +649,12 @@ fi
 %config(noreplace) %{etc_hadoop}/conf.empty/capacity-scheduler.xml
 %config(noreplace) %{etc_hadoop}/conf.empty/container-executor.cfg
 %config(noreplace) /etc/security/limits.d/yarn.conf
+%config(noreplace) %{_sysconfdir}/tmpfiles.d/%{name}-yarn.conf
 %{lib_hadoop}/libexec/yarn-config.sh
 %{lib_yarn}
 %attr(4754,root,yarn) %{lib_yarn}/bin/container-executor
 %{bin_hadoop}/yarn
-%attr(0775,yarn,hadoop) %{run_yarn}
+%ghost %dir %attr(0775,yarn,hadoop) %{run_yarn}
 %attr(0775,yarn,hadoop) %{log_yarn}
 %attr(0755,yarn,hadoop) %{state_yarn}
 %attr(1777,yarn,hadoop) %{state_yarn}/cache
@@ -622,10 +663,11 @@ fi
 %defattr(-,root,root)
 %config(noreplace) %{etc_hadoop}/conf.empty/hdfs-site.xml
 %config(noreplace) /etc/security/limits.d/hdfs.conf
+%config(noreplace) %{_sysconfdir}/tmpfiles.d/%{name}-hdfs.conf
 %{lib_hdfs}
 %{lib_hadoop}/libexec/hdfs-config.sh
 %{bin_hadoop}/hdfs
-%attr(0775,hdfs,hadoop) %{run_hdfs}
+%ghost %attr(0775,hdfs,hadoop) %{run_hdfs}
 %attr(0775,hdfs,hadoop) %{log_hdfs}
 %attr(0755,hdfs,hadoop) %{state_hdfs}
 %attr(1777,hdfs,hadoop) %{state_hdfs}/cache
@@ -640,10 +682,11 @@ fi
 %config(noreplace) %{etc_hadoop}/conf.empty/mapred-queues.xml.template
 %config(noreplace) %{etc_hadoop}/conf.empty/mapred-site.xml.template
 %config(noreplace) /etc/security/limits.d/mapreduce.conf
+%config(noreplace) %{_sysconfdir}/tmpfiles.d/%{name}-mapreduce.conf
 %{lib_mapreduce}
 %{lib_hadoop}/libexec/mapred-config.sh
 %{bin_hadoop}/mapred
-%attr(0775,mapred,hadoop) %{run_mapreduce}
+%ghost %attr(0775,mapred,hadoop) %{run_mapreduce}
 %attr(0775,mapred,hadoop) %{log_mapreduce}
 %attr(0775,mapred,hadoop) %{state_mapreduce}
 %attr(1777,mapred,hadoop) %{state_mapreduce}/cache
@@ -666,7 +709,6 @@ fi
 %config(noreplace) %{etc_hadoop}/conf.empty/kms-log4j.properties
 %config(noreplace) %{etc_hadoop}/conf.empty/kms-site.xml
 %config(noreplace) /etc/default/hadoop
-%config /etc/sysconfig/hadoop
 /etc/bash_completion.d/hadoop
 %{lib_hadoop}/*.jar
 %{lib_hadoop}/lib
@@ -692,50 +734,61 @@ fi
 %files httpfs
 %defattr(-,root,root)
 %config(noreplace) %{etc_httpfs}
-%config(noreplace) /etc/default/%{name}-httpfs
+%config(noreplace) %{_sysconfdir}/default/%{name}-httpfs
+%config(noreplace) %{_sysconfdir}/tmpfiles.d/%{name}-httpfs.conf
 %{lib_hadoop}/libexec/httpfs-config.sh
+%if 0%{?rhel} >= 7
+%{lib_hadoop}/libexec/hadoop-httpfs
+%{_unitdir}/%{name}-httpfs.service
+%else
 %{initd_dir}/%{name}-httpfs
+%endif
 %{lib_httpfs}
-%attr(0775,httpfs,httpfs) %{run_httpfs}
+%ghost %attr(0775,httpfs,httpfs) %{run_httpfs}
 %attr(0775,httpfs,httpfs) %{log_httpfs}
 %attr(0775,httpfs,httpfs) %{state_httpfs}
 
 # Service file management RPMs
+%if 0%{?rhel} >= 7
 %define service_macro() \
 %files %1 \
 %defattr(-,root,root) \
-%if 0%{?rhel} = 7
-%{initd_dir}/%{name}-%1-%{hadoop_version} \
-%{_unitdir}/%{name}-%1 \
-%else
-%{initd_dir}/%{name}-%1 \
-%endif
-%config(noreplace) /etc/default/%{name}-%1 \
+%{lib_hadoop}/libexec/%{name}-%1 \
+%{_unitdir}/%{name}-%1.service \
+%config(noreplace) %{_sysconfdir}/default/%{name}-%1 \
 %post %1 \
-%if 0%{?rhel} = 7
-systemctl daemon-reload %{name}-%1.service \
-%else
-chkconfig --add %{name}-%1 \
-%endif
+systemctl daemon-reload \
 \
 %preun %1 \
 if [ $1 = 0 ]; then \
-%if 0%{?rhel} = 7
   systemctl disable --no-reload %{name}-%1 > /dev/null 2>&1 || : \
   systemctl stop %{name}-%1 > /dev/null 2>&1 || : \
-%else
-  service %{name}-%1 stop > /dev/null 2>&1 \
-  chkconfig --del %{name}-%1 \
-%endif
 fi \
 %postun %1 \
 if [ $1 -ge 1 ]; then \
-%if 0%{?rhel} = 7
   systemctl try-restart %{name}-%1 >/dev/null 2>&1 || : \
-%else
-  service %{name}-%1 condrestart >/dev/null 2>&1 \
-%endif
 fi
+
+%else
+
+%define service_macro() \
+%files %1 \
+%defattr(-,root,root) \
+%{initd_dir}/%{name}-%1 \
+%config(noreplace) /etc/default/%{name}-%1 \
+%post %1 \
+chkconfig --add %{name}-%1 \
+\
+%preun %1 \
+if [ $1 = 0 ]; then \
+  service %{name}-%1 stop > /dev/null 2>&1 \
+  chkconfig --del %{name}-%1 \
+fi \
+%postun %1 \
+if [ $1 -ge 1 ]; then \
+  service %{name}-%1 condrestart >/dev/null 2>&1 \
+fi
+%endif
 
 %service_macro hdfs-namenode
 %service_macro hdfs-secondarynamenode

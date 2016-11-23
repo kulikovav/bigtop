@@ -5,9 +5,8 @@ After=NetworkManager.target
 
 [Service]
 Type=simple
-EnvironmentFile=-/etc/sysconfig/hadoop
-ExecStart=/etc/init.d/%i-$HADOOP_VERSION start
-ExecStop=/etc/init.d/%i-$HADOOP_VERSION stop
+ExecStart=/usr/lib/hadoop/libexec/hadoop-hdfs-secondarynamenode start
+ExecStop=/usr/lib/hadoop/libexec/hadoop-hdfs-secondarynamenode stop
 PIDFile=/var/run/hadoop-hdfs/hadoop-hdfs-secondarynamenode.pid
 
 #######################################
