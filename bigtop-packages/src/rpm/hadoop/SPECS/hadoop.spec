@@ -523,7 +523,7 @@ echo 'export JSVC_HOME=%{libexecdir}/bigtop-utils' >> $RPM_BUILD_ROOT/etc/defaul
 %__cp $RPM_SOURCE_DIR/%{name}-fuse.default $RPM_BUILD_ROOT/etc/default/%{name}-fuse
 
 %if 0%{?rhel} && 0%{?rhel} >= 7
-%__install -d -m 0755 %{buildroot}%{_unitdir}
+%__install -d -m 0755 $RPM_BUILD_ROOT/%{_unitdir}
 %endif
 # Generate the init.d scripts, unit files
 for service in %{hadoop_services}

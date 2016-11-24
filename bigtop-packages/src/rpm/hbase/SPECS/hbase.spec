@@ -91,8 +91,9 @@ Source4: init.d.tmpl
 Source5: hbase.default
 Source6: hbase.nofiles.conf
 Source7: regionserver-init.d.tpl
+Source8: hbase-systemd.service.tpl
 BuildArch: noarch
-Requires: coreutils, /usr/sbin/useradd, /sbin/chkconfig, /sbin/service
+Requires: coreutils, /usr/sbin/useradd
 Requires: hadoop-client, zookeeper >= 3.3.1, bigtop-utils >= 0.7
 
 %if  0%{?mgaversion}
@@ -101,6 +102,12 @@ Requires: bsh-utils
 Requires: sh-utils
 %endif
 
+%if 0%{?rhel} >= 7
+Requires: systemd
+BuildRequires: systemd-units
+%else
+Requires: /sbin/chkconfig, /sbin/service
+%endif
 
 %description 
 HBase is an open-source, distributed, column-oriented store modeled after Google' Bigtable: A Distributed Storage System for Structured Data by Chang et al. Just as Bigtable leverages the distributed data storage provided by the Google File System, HBase provides Bigtable-like capabilities on top of Hadoop. HBase includes:
@@ -289,9 +296,21 @@ ln -s %{_localstatedir}/run/%{name} %{buildroot}/%{pids_hbase}
 
 %__install -d  -m 0755  %{buildroot}/%{_localstatedir}/lib/%{name}
 
+%if 0%{?rhel} >= 7
+%__install -d -m 0755 %{buildroot}/%{_unitdir}
+%endif
+
 for service in %{hbase_services}
 do
+%if 0%{?rhel} >= 7
+    init_file=$RPM_BUILD_ROOT%{hbase_home}/libexec/%{name}-${service}
+    unit_file=$RPM_BUILD_ROOT%{_unitdir}/%{name}-${service}.service
+    %__install -d -m 0755 $RPM_BUILD_ROOT%{hbase_home}/libexec
+    %__cp %{SOURCE8} ${unit_file}
+    %__sed -i -e "s|__SERVICE__|${service}|" ${unit_file}
+%else
     init_file=$RPM_BUILD_ROOT/%{initd_dir}/%{name}-${service}
+%endif
     if [[ "$service" = "regionserver" ]] ; then
         # Region servers start from a different template that allows
         # them to run multiple concurrent instances of the daemon
@@ -365,7 +384,24 @@ fi
 %defattr(-,root,root)
 %doc %{doc_hbase}/
 
-
+%if 0%{?rhel} >= 7
+%define service_macro() \
+%files %1 \
+%attr(0755,root,root)/%{hbase_home}/libexec/%{name}-%1 \
+%attr(0644,root,root)%{_unitdir}/%{name}-%1.service \
+%post %1 \
+systemctl daemon-reload \
+\
+%preun %1 \
+if [ $1 = 0 ] ; then \
+        systemctl disable --no-reload %{name}-%1 > /dev/null 2>&1 || : \
+        systemctl stop %{name}-%1 > /dev/null 2>&1 || : \
+fi \
+%postun %1 \
+if [ $1 -ge 1 ]; then \
+        systemctl try-restart %{name}-%1 >/dev/null 2>&1 || : \
+fi
+%else
 %define service_macro() \
 %files %1 \
 %attr(0755,root,root)/%{initd_dir}/%{name}-%1 \
@@ -381,6 +417,7 @@ fi \
 if [ $1 -ge 1 ]; then \
         service %{name}-%1 condrestart >/dev/null 2>&1 \
 fi
+%endif
 %service_macro master
 %service_macro thrift
 %service_macro thrift2

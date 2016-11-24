@@ -23,7 +23,7 @@ boot2docker:
 
 repo: "http://192.168.13.2:8010/bigtop/7/x86_64"
 distro: centos
-components: [hadoop, yarn, pig]
+components: [hadoop, yarn, pig, hbase, zookeeper]
 namenode_ui_port: "50070"
 yarn_ui_port: "8088"
 yarn_proxy_port: "20888"

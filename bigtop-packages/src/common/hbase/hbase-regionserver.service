@@ -1,0 +1,20 @@
+[Unit]
+Description=The HBase regionserver daemon
+After=network.target
+After=NetworkManager.target
+
+[Service]
+Type=simple
+ExecStart=/usr/lib/hbase/libexec/hbase-regionserver start
+ExecStop=/usr/lib/hbase/libexec/hbase-regionserver stop
+PIDFile=/var/run/hbase/hbase-regionserver.pid
+
+#######################################
+# Note: Below are cgroup options
+#######################################
+#Delegate=true
+#CPUAccounting=true
+#CPUShares=1024
+
+[Install]
+WantedBy=multi-user.target
