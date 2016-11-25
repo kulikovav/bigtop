@@ -23,6 +23,7 @@
 %define hive_home /usr/lib/hive
 %define zookeeper_home /usr/lib/zookeeper
 %define hbase_home /usr/lib/hbase
+%define tez_home /usr/lib/tez
 #BIGTOP_PATCH_FILES
 
 # CentOS 5 does not have any dist macro
@@ -84,7 +85,7 @@ Source1: do-component-build
 Source2: install_pig.sh
 Source3: pig.1
 Source4: bigtop.bom
-Requires: hadoop-client, hbase, hive, zookeeper, bigtop-utils >= 0.7
+Requires: hadoop-client, hbase, hive, zookeeper, tez, bigtop-utils >= 0.7
 
 %description 
 Pig is a platform for analyzing large data sets that consists of a high-level language 
@@ -134,7 +135,6 @@ ln -f -s %{hive_home}/lib/hive-common.jar $RPM_BUILD_ROOT/%{lib_pig}/lib/
 ln -f -s %{hive_home}/lib/hive-exec.jar $RPM_BUILD_ROOT/%{lib_pig}/lib/
 ln -f -s %{hive_home}/lib/hive-serde.jar $RPM_BUILD_ROOT/%{lib_pig}/lib/
 ln -f -s %{hive_home}/lib/hive-shims-common.jar $RPM_BUILD_ROOT/%{lib_pig}/lib/
-ln -f -s %{hive_home}/lib/hive-shims-common-secure.jar $RPM_BUILD_ROOT/%{lib_pig}/lib/
 rm -f $RPM_BUILD_ROOT/%{lib_pig}/lib/h2/hbase-*.jar
 ln -f -s %{hbase_home}/hbase-client.jar $RPM_BUILD_ROOT/%{lib_pig}/lib/h2/
 ln -f -s %{hbase_home}/hbase-common.jar $RPM_BUILD_ROOT/%{lib_pig}/lib/h2/
@@ -142,6 +142,11 @@ ln -f -s %{hbase_home}/hbase-hadoop2-compat.jar $RPM_BUILD_ROOT/%{lib_pig}/lib/h
 ln -f -s %{hbase_home}/hbase-hadoop-compat.jar $RPM_BUILD_ROOT/%{lib_pig}/lib/h2/
 ln -f -s %{hbase_home}/hbase-protocol.jar $RPM_BUILD_ROOT/%{lib_pig}/lib/h2/
 ln -f -s %{hbase_home}/hbase-server.jar $RPM_BUILD_ROOT/%{lib_pig}/lib/h2/
+rm -f $RPM_BUILD_ROOT/%{lib_pig}/lib/h2/tez-*.jar
+for tez_lib in tez-api tez-common tez-dag tez-mapreduce tez-runtime-internals tez-runtime-library tez-yarn-timeline-history-with-acls
+do
+  ln -f -s %{tez_home}/${tez_lib}.jar $RPM_BUILD_ROOT/%{lib_pig}/lib/h2/
+done
 
 %pre
 # workaround for old style Pig conf dir  

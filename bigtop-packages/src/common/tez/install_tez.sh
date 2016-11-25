@@ -113,3 +113,11 @@ cp tez-site.xml  $PREFIX/$CONF_DIR
 
 tar -C  $PREFIX/$LIB_DIR -xzf  $BUILD_DIR/tez-dist/target/tez*-minimal.tar.gz
 
+# Make a symlink of tez.jar to tez-version.jar
+pushd `pwd`
+cd $PREFIX/$LIB_DIR
+for i in `ls tez*jar | grep -v tests.jar`
+do
+    ln -s $i `echo $i | sed -n 's/\(.*\)\(-[0-9].*\)\(.jar\)/\1\3/p'`
+done
+popd

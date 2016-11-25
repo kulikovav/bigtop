@@ -93,10 +93,10 @@ env TEZ_VERSION=%{version} bash %{SOURCE1}
 
 cp %{SOURCE3} %{SOURCE4} .
 sh %{SOURCE2} \
-	--build-dir=. \
-        --doc-dir=%{doc_tez} \
-        --libexec-dir=%{libexec_tez} \
-	--prefix=$RPM_BUILD_ROOT
+  --build-dir=. \
+  --doc-dir=%{doc_tez} \
+  --libexec-dir=%{libexec_tez} \
+  --prefix=$RPM_BUILD_ROOT
 
 %pre
 
@@ -112,4 +112,4 @@ sh %{SOURCE2} \
 %{tez_home}
 %doc %{doc_tez}
 %{man_dir}/man1/tez.1.*
-/etc/tez/conf/tez-site.xml
+%config(noreplace) %attr(0644,root,root) /etc/tez/conf/tez-site.xml
