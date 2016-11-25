@@ -62,6 +62,7 @@ Source3: tez.1
 Source4: tez-site.xml
 Source5: bigtop.bom
 Source6: init.d.tmpl
+#BIGTOP_PATCH_FILES
 BuildArch: noarch
 Requires: hadoop hadoop-hdfs hadoop-yarn hadoop-mapreduce
 
@@ -80,6 +81,8 @@ processing data. It is currently built atop Apache Hadoop YARN
 %prep
 %setup -q -n apache-%{name}-%{tez_base_version}-src
 
+#BIGTOP_PATCH_COMMANDS
+
 %build
 env TEZ_VERSION=%{version} bash %{SOURCE1}
 
@@ -88,10 +91,10 @@ env TEZ_VERSION=%{version} bash %{SOURCE1}
 
 cp %{SOURCE3} %{SOURCE4} .
 sh %{SOURCE2} \
-	--build-dir=. \
-        --doc-dir=%{doc_tez} \
-        --libexec-dir=%{libexec_tez} \
-	--prefix=$RPM_BUILD_ROOT
+  --build-dir=. \
+  --doc-dir=%{doc_tez} \
+  --libexec-dir=%{libexec_tez} \
+  --prefix=$RPM_BUILD_ROOT
 
 %pre
 
@@ -107,4 +110,4 @@ sh %{SOURCE2} \
 %{tez_home}
 %doc %{doc_tez}
 %{man_dir}/man1/tez.1.*
-/etc/tez/conf/tez-site.xml
+%config(noreplace) %attr(0644,root,root) /etc/tez/conf/tez-site.xml
