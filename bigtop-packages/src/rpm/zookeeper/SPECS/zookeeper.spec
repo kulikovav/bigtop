@@ -79,6 +79,7 @@ Source8: init.d.tmpl
 Source9: zookeeper-rest.svc
 Source10: zookeeper-rest.service
 Source11: zookeeper-server.service
+Source12: tmpfiles.tmpl
 #BIGTOP_PATCH_FILES
 BuildRequires: autoconf, automake, cppunit-devel
 Requires(pre): coreutils, /usr/sbin/groupadd, /usr/sbin/useradd
@@ -175,6 +176,8 @@ server_init_file=$RPM_BUILD_ROOT/%{lib_zookeeper}/libexec/%{svc_zookeeper}
 rest_init_file=$RPM_BUILD_ROOT/%{lib_zookeeper}/libexec/%{svc_zookeeper_rest}
 %__cp %{SOURCE10} $RPM_BUILD_ROOT/%{_unitdir}/%{name}-rest.service
 %__cp %{SOURCE11} $RPM_BUILD_ROOT/%{_unitdir}/%{name}-server.service
+%__install -d -m 0755 $RPM_BUILD_ROOT/%{_sysconfdir}/tmpfiles.d
+sed "s|__RUN_DIR__|%{run_zookeeper}|;s|__OWNER__|zookeeper|;s|__GROUP__|zookeeper|;s|__PERM__|0755|" %{SOURCE12} > $RPM_BUILD_ROOT/%{_sysconfdir}/tmpfiles.d/%{name}.conf
 %else
 %__install -d -m 0755 $RPM_BUILD_ROOT/%{initd_dir}
 server_init_file=$RPM_BUILD_ROOT/%{initd_dir}/%{svc_zookeeper}
@@ -196,6 +199,9 @@ getent passwd zookeeper > /dev/null || useradd -c "ZooKeeper" -s /sbin/nologin -
 %post
 %{alternatives_cmd} --install %{etc_zookeeper}/conf %{name}-conf %{etc_zookeeper}/conf.dist 30
 %__install -d -o zookeeper -g zookeeper -m 0755 %{vlb_zookeeper}
+%if 0%{?rhel} >= 7
+systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/%{name}.conf
+%endif
 
 %preun
 if [ "$1" = 0 ]; then
@@ -263,6 +269,7 @@ fi
 %defattr(-,root,root)
 %config(noreplace) %{etc_zookeeper}/conf.dist
 %config(noreplace) /etc/default/zookeeper
+%config(noreplace) %{_sysconfdir}/tmpfiles.d/%{name}.conf
 %{lib_zookeeper}
 %{bin_zookeeper}/zookeeper-server
 %{bin_zookeeper}/zookeeper-server-initialize
