@@ -6,12 +6,12 @@ ConditionPathExists=/etc/zookeeper/conf/log4j.properties
 After=NetworkManager.target
 
 [Service]
-Environment="ZOOCFGDIR=/etc/zookeeper/conf"
+Type=simple
 EnvironmentFile=-/etc/default/zookeeper
-SyslogIdentifier=zookeeper
 WorkingDirectory=/usr/lib/zookeeper
-ExecStart=/usr/lib/zookeeper/bin/zkServer.sh start-foreground
-PIDFile=/var/run/zookeeper/zookeeper-server-zookeeper.pid
+ExecStart=/usr/bin/zookeeper-server start
+PIDFile=/var/run/zookeeper/zookeeper_server.pid
+SuccessExitStatus=143
 Restart=on-failure
 RestartSec=20
 User=zookeeper
