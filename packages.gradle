@@ -101,7 +101,7 @@ def nativePackaging = {
     errorOutput devNull
     standardOutput devNull
   }
-  [false, "deb", "rpm"][result.getExitValue()]
+  [false, "rpm"][result.getExitValue()]
 }.call()
 
 def generateDistributionsFile = { file ->
@@ -267,128 +267,6 @@ def genTasks = { target ->
       }
     }
     touchTargetFile(config.bigtop.components[target].targettar)
-  }
-
-  // Keeping the reference to deb task to be used later for correct sequencing
-  Task tdeb = task "$target-deb"(dependsOn: "${target}-sdeb",
-      description: "Building DEB for $target artifacts",
-      group: PACKAGES_GROUP) << {
-    if (new File(config.bigtop.components[target].targetdeb)?.exists()) {
-      println "\tNothing to do. Exiting..."
-      return
-    }
-    def final PKG_NAME = config.bigtop.components[target].pkg
-    def final PKG_VERSION = config.bigtop.components[target].version.pkg
-    def final PKG_OUTPUT_DIR = config.bigtop.components[target].outputdir
-    def final BASE_VERSION = config.bigtop.components[target].version.base
-    def final SRCDEB = "${PKG_NAME}_$PKG_VERSION-${BIGTOP_BUILD_STAMP}.dsc"
-
-    exec {
-      workingDir PKG_OUTPUT_DIR
-      commandLine "dpkg-source -x $SRCDEB".split(' ')
-    }
-// Order of debuild parameters is important; hence specifying explicitely rather
-// than in an array of args
-    def command = """debuild \
---preserve-envvar PATH \
---preserve-envvar MAVEN3_HOME \
---preserve-envvar MAVEN_OPTS \
---preserve-envvar JAVA_HOME \
---set-envvar=${toOldStyleName(target)}_BASE_VERSION=$BASE_VERSION \
---set-envvar=${toOldStyleName(target)}_VERSION=$PKG_VERSION \
---set-envvar=${toOldStyleName(target)}_RELEASE=$BIGTOP_BUILD_STAMP \
--uc -us -b
-"""
-    exec {
-      workingDir "$PKG_OUTPUT_DIR/$PKG_NAME-$PKG_VERSION"
-      commandLine command.split(' ')
-    }
-    exec {
-      workingDir "$PKG_OUTPUT_DIR"
-      commandLine 'rm','-rf',"$PKG_NAME-$PKG_VERSION"
-    }
-    touchTargetFile(config.bigtop.components[target].targetdeb)
-  }
-  // Guarantee that tasks are ran in the order set by BOM file dependencies section
-  if (buildDependencies)
-    config.bigtop.dependencies.each { dependsOn, dependees ->
-      if (dependees.contains(tdeb.name-"-deb")) tdeb.dependsOn "$dependsOn-deb"
-    }
-  // If dependencies aren't explicitly set, the default build order is defined
-  // by the sequence of the components in the BOM file
-  if (!config.bigtop.dependencies && bomTasks.size() > 0)
-    tdeb.mustRunAfter "${bomTasks.get(bomTasks.size() - 1)}-deb".toLowerCase()
-   task "$target-sdeb" (dependsOn: ["${target}_vardefines",  "${target}-tar"],
-      description: "Building SDEB for $target artifacts",
-      group: PACKAGES_GROUP
-  ) << {
-    if (new File(config.bigtop.components[target].targetsdeb)?.exists()) {
-      println "\tNothing to do. Exiting..."
-      return
-    }
-    def final PKG_BUILD_DIR = config.bigtop.components[target].builddir
-    def final NAME = config.bigtop.components[target].name
-    def final PKG_NAME = config.bigtop.components[target].pkg
-    def final SEED_TAR = config.bigtop.components[target].seedtar
-    def final PKG_VERSION = config.bigtop.components[target].version.pkg
-    def final PKG_OUTPUT_DIR = config.bigtop.components[target].outputdir
-    delete ("$PKG_BUILD_DIR/deb")
-    def final DEB_BLD_DIR = "$PKG_BUILD_DIR/deb/$NAME-${PKG_VERSION}"
-    def final DEB_PKG_DIR = "$PKG_BUILD_DIR/deb/$PKG_NAME-${PKG_VERSION}-${BIGTOP_BUILD_STAMP}"
-    mkdir (DEB_BLD_DIR)
-    copy {
-      from SEED_TAR
-      into "$PKG_BUILD_DIR/deb/"
-      rename config.bigtop.components[target].tarball.destination, "${PKG_NAME}_${PKG_VERSION}.orig.tar.gz"
-    }
-    exec {
-      workingDir DEB_BLD_DIR
-      commandLine "tar --strip-components 1 -xf $DEB_BLD_DIR/../${PKG_NAME}_${PKG_VERSION}.orig.tar.gz".split(' ')
-    }
-    fileTree ("${BASE_DIR}/bigtop-packages/src/deb/$NAME") {
-      include '**/*'
-    }.copy { into "$DEB_BLD_DIR/debian" }
-    copy {
-      from "${BASE_DIR}/bigtop-packages/src/templates/init.d.tmpl"
-      into "$DEB_BLD_DIR/debian"
-    }
-    fileTree ("$BASE_DIR/bigtop-packages/src/common/$NAME") {
-      include '**/*'
-    }.copy { into "$DEB_BLD_DIR/debian" }
-    // Prepeare bom file with all the versions
-    def bomWriter = new File("$DEB_BLD_DIR/debian/bigtop.bom").newWriter()
-    bomVersions.each { bomWriter << "$it\n"}
-    bomWriter.close()
-    // Create changelog
-    def changelog = new File("$DEB_BLD_DIR/debian/changelog").newWriter()
-    changelog << "$PKG_NAME ($PKG_VERSION-$BIGTOP_BUILD_STAMP) stable; urgency=low\n"
-    changelog << "  Clean build\n"
-    changelog << " -- Bigtop <dev@bigtop.apache.org>  ${getDate()}\n"
-    changelog.close()
-
-    // Move patches and create "series"
-    def patches = new File( "$DEB_BLD_DIR/debian").list({ d, f -> f ==~ /patch.*diff/}).sort()
-    if (patches.size() > 0) {
-      mkdir("$DEB_BLD_DIR/debian/patches")
-      def seriesWriter = new File("$DEB_BLD_DIR/debian/patches/series").newWriter()
-      patches.each { f ->
-        def res = new File("$DEB_BLD_DIR/debian/$f").renameTo( "$DEB_BLD_DIR/debian/patches/$f")
-        seriesWriter << "$f\n"
-      }
-      seriesWriter.close()
-    }
-    // Deleting obsolete files
-    delete fileTree (dir: "$DEB_BLD_DIR/debian", includes: ['*.ex', '*.EX', '*.~'])
-    // Creating source package
-    exec {
-      workingDir DEB_BLD_DIR
-      commandLine "dpkg-buildpackage -uc -us -sa -S".split(' ')
-    }
-    mkdir(PKG_OUTPUT_DIR)
-    fileTree (dir: "$DEB_PKG_DIR/..", includes: ['*.dsc', '*.diff.gz', '*.debian.tar.gz', '*.debian.tar.xz', "*_source.changes", "*.orig.tar.gz" ]).copy {
-      into PKG_OUTPUT_DIR
-    }
-    touchTargetFile(config.bigtop.components[target].targetsdeb)
   }
 
   // Keeping the reference to task to be used later for correct sequencing
@@ -562,8 +440,6 @@ def genTasks = { target ->
     config.bigtop.components[target].targettar  = config.bigtop.components[target].builddir + '/.tar'
     config.bigtop.components[target].targetsrpm  = config.bigtop.components[target].builddir + '/.srpm'
     config.bigtop.components[target].targetrpm  = config.bigtop.components[target].builddir + '/.rpm'
-    config.bigtop.components[target].targetsdeb  = config.bigtop.components[target].builddir + '/.sdeb'
-    config.bigtop.components[target].targetdeb  = config.bigtop.components[target].builddir + '/.deb'
     config.bigtop.components[target].targetrelnotes  = config.bigtop.components[target].builddir + '/.relnotes'
 
     if (System.getProperty(VERBOSE)) {
@@ -635,14 +511,6 @@ project.afterEvaluate {
       description: "Build all RPM packages for the stack",
       group: PACKAGES_GROUP
   ) << { }
-  task "sdeb" (dependsOn: tasks.findAll { alltask -> alltask.name.endsWith("-sdeb")}*.name,
-      description: "Build all SDEB packages for the stack components",
-      group: PACKAGES_GROUP
-  ) << { }
-  task "deb" (dependsOn: tasks.findAll { alltask -> alltask.name.endsWith("-deb")}*.name,
-      description: "Build all DEB packages for the stack components",
-      group: PACKAGES_GROUP
-  ) << { }
 
   task allclean (dependsOn: [clean, tasks.findAll { alltask -> alltask.name.endsWith("-clean")}*.name],
       description: "Removing $BUILD_DIR, $OUTPUT_DIR, and $DIST_DIR.\n\t\t" +
@@ -656,25 +524,6 @@ project.afterEvaluate {
       description: "Removing $BUILD_DIR, $OUTPUT_DIR, $DIST_DIR, and $DL_DIR",
       group: PACKAGES_GROUP) << {
     delete (DL_DIR)
-  }
-}
-
-task "apt" (
-    description: "Creating APT repository",
-    group: PACKAGES_GROUP) << {
-
-  delete ( "$OUTPUT_DIR/apt")
-  mkdir ("$OUTPUT_DIR/apt/conf")
-
-  generateDistributionsFile("$OUTPUT_DIR/apt/conf/distributions");
-
-  fileTree (OUTPUT_DIR) {
-    include "*/*.changes"
-  }.each  { changeFile ->
-    exec {
-      workingDir BUILD_DIR
-      commandLine "reprepro -Vb $OUTPUT_DIR/apt include bigtop $changeFile".split(' ')
-    }
   }
 }
 
