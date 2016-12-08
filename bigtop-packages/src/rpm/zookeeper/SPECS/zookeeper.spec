@@ -78,6 +78,8 @@ Source6: zoo.cfg
 Source7: zookeeper.default
 Source8: init.d.tmpl
 Source9: zookeeper-rest.svc
+Source10: zookeeper-rest.service
+Source11: zookeeper-server.service
 #BIGTOP_PATCH_FILES
 BuildRequires: autoconf, automake, cppunit-devel
 Requires(pre): coreutils, /usr/sbin/groupadd, /usr/sbin/useradd
@@ -123,14 +125,25 @@ Requires: /lib/lsb/init-functions
 
 %description server
 This package starts the zookeeper server on startup
+%if 0%{?rhel} >= 7
+Requires: systemd
+BuildRequires: systemd-units
+%else
+Requires: %{chkconfig_dep}, %{service_dep}
+%endif
 
 %package rest
 Summary: ZooKeeper REST Server
 Group: System/Daemons
 Requires: %{name} = %{version}-%{release}
 Requires(pre): %{name} = %{version}-%{release}
+%if 0%{?rhel} >= 7
+Requires: systemd
+BuildRequires: systemd-units
+%else
 Requires(post): %{chkconfig_dep}
 Requires(preun): %{service_dep}, %{chkconfig_dep}
+%endif
 
 %package native
 Summary: C bindings for ZooKeeper clients
@@ -167,7 +180,14 @@ orig_init_file=%{SOURCE3}
 %endif
 
 %__install -d -m 0755 $RPM_BUILD_ROOT/%{initd_dir}/
+%if 0%{?rhel} >= 7
+%__install -d -m 0755 $RPM_BUILD_ROOT/%{lib_zookeeper}/libexec
+%__install -d -m 0755 $RPM_BUILD_ROOT/%{_unitdir}
+%__cp %{SOURCE11} $RPM_BUILD_ROOT/%{_unitdir}/%{name}-server.service
+init_file=$RPM_BUILD_ROOT/%{lib_zookeeper}/libexec/%{svc_zookeeper}
+%else
 init_file=$RPM_BUILD_ROOT/%{initd_dir}/%{svc_zookeeper}
+%endif
 %__cp $orig_init_file $init_file
 chmod 755 $init_file
 
@@ -193,31 +213,57 @@ if [ "$1" = 0 ]; then
 fi
 
 %post server
+%if 0%{?rhel} >= 7
+  systemctl daemon-reload
+%else
 	chkconfig --add %{svc_zookeeper}
+%endif
 
 %preun server
 if [ $1 = 0 ] ; then
+%if 0%{?rhel} >= 7
+  systemctl disable --no-reload %{name}-server > /dev/null 2>&1 || :
+  systemctl stop %{name}-server > /dev/null 2>&1 || :
+%else
 	service %{svc_zookeeper} stop > /dev/null 2>&1
 	chkconfig --del %{svc_zookeeper}
+%endif
 fi
 
 %postun server
 if [ $1 -ge 1 ]; then
-        service %{svc_zookeeper} condrestart > /dev/null 2>&1
+%if 0%{?rhel} >= 7
+  systemctl try-restart %{name}-%1 >/dev/null 2>&1 || :
+%else
+  service %{svc_zookeeper} condrestart > /dev/null 2>&1
+%endif
 fi
 
 %post rest
+%if 0%{?rhel} >= 7
+  systemctl daemon-reload
+%else
 	chkconfig --add %{svc_zookeeper_rest}
+%endif
 
 %preun rest
 if [ $1 = 0 ] ; then
+%if 0%{?rhel} >= 7
+  systemctl disable --no-reload %{name}-rest > /dev/null 2>&1 || :
+  systemctl stop %{name}-rest > /dev/null 2>&1 || :
+%else
 	service %{svc_zookeeper_rest} stop > /dev/null 2>&1
 	chkconfig --del %{svc_zookeeper_rest}
+%endif
 fi
 
 %postun rest
 if [ $1 -ge 1 ]; then
-        service %{svc_zookeeper_rest} condrestart > /dev/null 2>&1
+%if 0%{?rhel} >= 7
+  systemctl try-restart %{name}-%1 >/dev/null 2>&1 || :
+%else
+  service %{svc_zookeeper_rest} condrestart > /dev/null 2>&1
+%endif
 fi
 
 #######################
@@ -236,10 +282,20 @@ fi
 %{man_dir}/man1/zookeeper.1.*
 
 %files server
+%if 0%{?rhel} >= 7
+%attr(0644,root,root)%{_unitdir}/%{name}-server.service
+%attr(0755,root,root) %{lib_zookeeper}/libexec/%{svc_zookeeper}
+%else
 %attr(0755,root,root) %{initd_dir}/%{svc_zookeeper}
+%endif
 
 %files rest
+%if 0%{?rhel} >= 7
+%attr(0644,root,root)%{_unitdir}/%{name}-rest.service
+%attr(0755,root,root) %{lib_zookeeper}/libexec/%{svc_zookeeper_rest}
+%else
 %attr(0755,root,root) %{initd_dir}/%{svc_zookeeper_rest}
+%endif
 
 %files native
 %defattr(-,root,root)

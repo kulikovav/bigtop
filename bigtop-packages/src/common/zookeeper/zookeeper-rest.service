@@ -1,0 +1,13 @@
+[Unit]
+Description=Apache ZooKeeper
+After=network.target
+
+[Service]
+Type=Simple
+WorkingDirectory=/usr/lib/zookeeper
+ExecStart=/usr/lib/zookeeper/libexec/zookeeper-rest start
+ExecStop=/usr/lib/zookeeper/libexec/zookeeper-rest stop
+PIDFile=/var/run/zookeeper/zookeeper-rest-zookeeper.pid
+
+[Install]
+WantedBy=multi-user.target

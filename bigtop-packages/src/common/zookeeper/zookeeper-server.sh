@@ -171,9 +171,7 @@ case "$1" in
         fi
 	;;
     *)
-	N=/etc/init.d/$NAME
-  # echo "Usage: $N {start|stop|restart|reload|force-reload}" >&2
-	echo "Usage: $N {start|stop|restart|force-reload|status|force-stop|condrestart|try-restart|init}" >&2
+	echo "Usage: $0 {start|stop|restart|force-reload|status|force-stop|condrestart|try-restart|init}" >&2
 
 	exit 1
 	;;
