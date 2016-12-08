@@ -180,7 +180,7 @@ server_init_file=$RPM_BUILD_ROOT/%{initd_dir}/%{svc_zookeeper}
 rest_init_file=$RPM_BUILD_ROOT/%{initd_dir}/%{svc_zookeeper_rest}
 %__cp %{SOURCE10} $RPM_BUILD_ROOT/%{_unitdir}/%{name}-rest.service
 %endif
-%__cp %{SOURCE11} $server_init_file
+%__cp %{SOURCE3} $server_init_file
 bash $RPM_SOURCE_DIR/init.d.tmpl $RPM_SOURCE_DIR/zookeeper-rest.svc rpm $rest_init_file
 chmod 755 $server_init_file
 chmod 755 $rest_init_file
