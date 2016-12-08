@@ -72,7 +72,6 @@ Source0: %{name}-%{zookeeper_base_version}.tar.gz
 Source1: do-component-build
 Source2: install_zookeeper.sh
 Source3: zookeeper-server.sh
-Source4: zookeeper-server.sh.suse
 Source5: zookeeper.1
 Source6: zoo.cfg
 Source7: zookeeper.default
@@ -104,11 +103,6 @@ Requires: %{name} = %{version}-%{release}
 Requires(pre): %{name} = %{version}-%{release}
 Requires(post): %{chkconfig_dep}
 Requires(preun): %{service_dep}, %{chkconfig_dep}
-
-%if  %{?suse_version:1}0
-# Required for init scripts
-Requires: insserv
-%endif
 
 %if  0%{?mgaversion}
 # Required for init scripts
@@ -173,27 +167,22 @@ bash %{SOURCE2} \
           --system-include-dir=%{_includedir} \
           --system-lib-dir=%{_libdir}
 
-%if  %{?suse_version:1}0
-orig_init_file=%{SOURCE4}
-%else
-orig_init_file=%{SOURCE3}
-%endif
 
-%__install -d -m 0755 $RPM_BUILD_ROOT/%{initd_dir}/
 %if 0%{?rhel} >= 7
 %__install -d -m 0755 $RPM_BUILD_ROOT/%{lib_zookeeper}/libexec
 %__install -d -m 0755 $RPM_BUILD_ROOT/%{_unitdir}
 %__cp %{SOURCE11} $RPM_BUILD_ROOT/%{_unitdir}/%{name}-server.service
-init_file=$RPM_BUILD_ROOT/%{lib_zookeeper}/libexec/%{svc_zookeeper}
+server_init_file=$RPM_BUILD_ROOT/%{lib_zookeeper}/libexec/%{svc_zookeeper}
+rest_init_file=$RPM_BUILD_ROOT/%{lib_zookeeper}/libexec/%{svc_zookeeper_rest}
 %else
-init_file=$RPM_BUILD_ROOT/%{initd_dir}/%{svc_zookeeper}
+%__install -d -m 0755 $RPM_BUILD_ROOT/%{initd_dir}
+server_init_file=$RPM_BUILD_ROOT/%{initd_dir}/%{svc_zookeeper}
+rest_init_file=$RPM_BUILD_ROOT/%{initd_dir}/%{svc_zookeeper_rest}
 %endif
-%__cp $orig_init_file $init_file
-chmod 755 $init_file
-
-# Install Zookeeper REST server init script
-init_file=$RPM_BUILD_ROOT/%{initd_dir}/zookeeper-rest
-bash $RPM_SOURCE_DIR/init.d.tmpl $RPM_SOURCE_DIR/zookeeper-rest.svc rpm $init_file
+%__cp %{SOURCE5} $server_init_file
+bash $RPM_SOURCE_DIR/init.d.tmpl $RPM_SOURCE_DIR/zookeeper-rest.svc rpm $rest_init_file
+chmod 755 $server_init_file
+chmod 755 $rest_init_file
 
 %pre
 getent group zookeeper >/dev/null || groupadd -r zookeeper
