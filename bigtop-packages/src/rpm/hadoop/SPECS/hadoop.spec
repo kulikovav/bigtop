@@ -649,7 +649,9 @@ fi
 %config(noreplace) %{etc_hadoop}/conf.empty/capacity-scheduler.xml
 %config(noreplace) %{etc_hadoop}/conf.empty/container-executor.cfg
 %config(noreplace) /etc/security/limits.d/yarn.conf
+%if 0%{?rhel} >= 7
 %config(noreplace) %{_sysconfdir}/tmpfiles.d/%{name}-yarn.conf
+%endif
 %{lib_hadoop}/libexec/yarn-config.sh
 %{lib_yarn}
 %attr(4754,root,yarn) %{lib_yarn}/bin/container-executor
@@ -663,7 +665,9 @@ fi
 %defattr(-,root,root)
 %config(noreplace) %{etc_hadoop}/conf.empty/hdfs-site.xml
 %config(noreplace) /etc/security/limits.d/hdfs.conf
+%if 0%{?rhel} >= 7
 %config(noreplace) %{_sysconfdir}/tmpfiles.d/%{name}-hdfs.conf
+%endif
 %{lib_hdfs}
 %{lib_hadoop}/libexec/hdfs-config.sh
 %{bin_hadoop}/hdfs
@@ -682,7 +686,9 @@ fi
 %config(noreplace) %{etc_hadoop}/conf.empty/mapred-queues.xml.template
 %config(noreplace) %{etc_hadoop}/conf.empty/mapred-site.xml.template
 %config(noreplace) /etc/security/limits.d/mapreduce.conf
+%if 0%{?rhel} >= 7
 %config(noreplace) %{_sysconfdir}/tmpfiles.d/%{name}-mapreduce.conf
+%endif
 %{lib_mapreduce}
 %{lib_hadoop}/libexec/mapred-config.sh
 %{bin_hadoop}/mapred
@@ -735,7 +741,9 @@ fi
 %defattr(-,root,root)
 %config(noreplace) %{etc_httpfs}
 %config(noreplace) %{_sysconfdir}/default/%{name}-httpfs
+%if 0%{?rhel} >= 7
 %config(noreplace) %{_sysconfdir}/tmpfiles.d/%{name}-httpfs.conf
+%endif
 %{lib_hadoop}/libexec/httpfs-config.sh
 %if 0%{?rhel} >= 7
 %{lib_hadoop}/libexec/hadoop-httpfs
