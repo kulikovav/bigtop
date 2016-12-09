@@ -269,7 +269,9 @@ fi
 %defattr(-,root,root)
 %config(noreplace) %{etc_zookeeper}/conf.dist
 %config(noreplace) /etc/default/zookeeper
+%if 0%{?rhel} >= 7
 %config(noreplace) %{_sysconfdir}/tmpfiles.d/%{name}.conf
+%endif
 %{lib_zookeeper}
 %{bin_zookeeper}/zookeeper-server
 %{bin_zookeeper}/zookeeper-server-initialize
