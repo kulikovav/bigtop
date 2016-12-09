@@ -39,18 +39,8 @@
     <module>oozie</module>
     <module>hbase</module>
     <module>flume</module>
-    <module>sqoop</module>
-    <module>mahout</module>
-    <module>giraph</module>
-    <module>hue</module>
-    <module>solr</module>
-    <module>crunch</module>
-    <module>datafu</module>
-    <module>longevity</module>
     <module>hcatalog</module>
     <module>spark</module>
-    <module>phoenix</module>
-    <module>fatjar</module>
   </modules>
 
   <dependencies>

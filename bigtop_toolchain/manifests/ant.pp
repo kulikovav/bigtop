@@ -14,7 +14,7 @@
 # limitations under the License.
 
 class bigtop_toolchain::ant {
-  $ant =  'apache-ant-1.9.6'
+  $ant =  'apache-ant-1.9.7'
 
   include bigtop_toolchain::deps
 

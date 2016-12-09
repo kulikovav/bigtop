@@ -15,7 +15,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 buildscript {
   repositories {
     mavenCentral()
@@ -125,7 +124,6 @@ rat {
   ]
 }
 
-
 allprojects {
   apply plugin: 'java'
   apply plugin: 'maven'
@@ -153,8 +151,8 @@ project(':itest-common') {
   description = """iTest: system and integration testing in the cloud"""
 
   dependencies {
-    compile group: 'org.codehaus.groovy', name: 'groovy-all', version:'2.1.8'
-    compile group: 'junit', name: 'junit', version:'4.11'
+    compile group: 'org.codehaus.groovy', name: 'groovy-all', version:'2.4.7'
+    compile group: 'junit', name: 'junit', version:'4.12'
     compile group: 'commons-logging', name: 'commons-logging', version:'1.1'
     compile group: 'org.apache.ant', name: 'ant', version:'1.8.2'
     compile group: 'org.apache.ant', name: 'ant-junit', version:'1.8.2'

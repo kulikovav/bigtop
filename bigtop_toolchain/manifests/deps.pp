@@ -18,10 +18,13 @@ class bigtop_toolchain::deps {
 
   $apache_prefix = nearest_apache_mirror()
   include bigtop_toolchain::packages
+  
+  $maven_major_version = '3'
+  $maven_version = "${maven_major_version}.3.9"
 
-  exec {"/usr/bin/wget $apache_prefix/maven/maven-3/3.3.3/binaries/apache-maven-3.3.3-bin.tar.gz":
+  exec {"/usr/bin/wget $apache_prefix/maven/maven-${maven_major_version}/${maven_version}/binaries/apache-maven-${maven_version}-bin.tar.gz":
     cwd     => "/usr/src",
     require => Package[$packages::pkgs],
-    unless  => "/usr/bin/test -f /usr/src/apache-maven-3.3.3-bin.tar.gz",
+    unless  => "/usr/bin/test -f /usr/src/apache-maven-${maven_version}-bin.tar.gz",
   }
 }

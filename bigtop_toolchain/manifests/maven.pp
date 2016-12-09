@@ -16,16 +16,16 @@
 class bigtop_toolchain::maven {
 
   include bigtop_toolchain::deps
-  exec {'/bin/tar xvzf /usr/src/apache-maven-3.3.3-bin.tar.gz':
+  exec {"/bin/tar xvzf /usr/src/apache-maven-${bigtop_toolchain::deps::maven_version}-bin.tar.gz":
     cwd         => '/usr/local',
     refreshonly => true,
-    subscribe   => Exec["/usr/bin/wget $bigtop_toolchain::deps::apache_prefix/maven/maven-3/3.3.3/binaries/apache-maven-3.3.3-bin.tar.gz"],
-    require     => Exec["/usr/bin/wget $bigtop_toolchain::deps::apache_prefix/maven/maven-3/3.3.3/binaries/apache-maven-3.3.3-bin.tar.gz"],
+    subscribe   => Exec["/usr/bin/wget $bigtop_toolchain::deps::apache_prefix/maven/maven-${bigtop_toolchain::deps::maven_major_version}/${bigtop_toolchain::deps::maven_version}/binaries/apache-maven-${bigtop_toolchain::deps::maven_version}-bin.tar.gz"],
+    require     => Exec["/usr/bin/wget $bigtop_toolchain::deps::apache_prefix/maven/maven-${bigtop_toolchain::deps::maven_major_version}/${bigtop_toolchain::deps::maven_version}/binaries/apache-maven-${bigtop_toolchain::deps::maven_version}-bin.tar.gz"],
   }
   
   file {'/usr/local/maven':
     ensure  => link,
-    target  => '/usr/local/apache-maven-3.3.3',
-    require => Exec['/bin/tar xvzf /usr/src/apache-maven-3.3.3-bin.tar.gz'],
+    target  => "/usr/local/apache-maven-${bigtop_toolchain::deps::maven_version}",
+    require => Exec["/bin/tar xvzf /usr/src/apache-maven-${bigtop_toolchain::deps::maven_version}-bin.tar.gz"],
   }
 }
