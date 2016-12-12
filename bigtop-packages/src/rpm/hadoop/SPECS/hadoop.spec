@@ -22,9 +22,9 @@
 %undefine _missing_build_ids_terminate_build
 
 %define hadoop_name hadoop
-%define etc_hadoop /etc/%{name}
-%define etc_yarn /etc/yarn
-%define etc_httpfs /etc/%{name}-httpfs
+%define etc_hadoop %{_sysconfdir}/%{name}
+%define etc_yarn %{_sysconfdir}/yarn
+%define etc_httpfs %{_sysconfdir}/%{name}-httpfs
 %define config_hadoop %{etc_hadoop}/conf
 %define config_yarn %{etc_yarn}/conf
 %define config_httpfs %{etc_httpfs}/conf
@@ -35,13 +35,13 @@
 %define lib_hdfs %{lib_hadoop_dirname}/%{name}-hdfs
 %define lib_yarn %{lib_hadoop_dirname}/%{name}-yarn
 %define lib_mapreduce %{lib_hadoop_dirname}/%{name}-mapreduce
-%define log_hadoop_dirname /var/log
+%define log_hadoop_dirname %{_localstatedir}/log
 %define log_hadoop %{log_hadoop_dirname}/%{name}
 %define log_yarn %{log_hadoop_dirname}/%{name}-yarn
 %define log_hdfs %{log_hadoop_dirname}/%{name}-hdfs
 %define log_httpfs %{log_hadoop_dirname}/%{name}-httpfs
 %define log_mapreduce %{log_hadoop_dirname}/%{name}-mapreduce
-%define run_hadoop_dirname /var/run
+%define run_hadoop_dirname %{_localstatedir}/run
 %define run_hadoop %{run_hadoop_dirname}/hadoop
 %define run_yarn %{run_hadoop_dirname}/%{name}-yarn
 %define run_hdfs %{run_hadoop_dirname}/%{name}-hdfs
@@ -73,50 +73,8 @@
 %global hadoop_arch Linux-amd64-64
 %endif
 
-# CentOS 5 does not have any dist macro
-# So I will suppose anything that is not Mageia or a SUSE will be a RHEL/CentOS/Fedora
-%if %{!?suse_version:1}0 && %{!?mgaversion:1}0
-
-# FIXME: brp-repack-jars uses unzip to expand jar files
-# Unfortunately aspectjtools-1.6.5.jar pulled by ivy contains some files and directories without any read permission
-# and make whole process to fail.
-# So for now brp-repack-jars is being deactivated until this is fixed.
-# See BIGTOP-294
-%define __os_install_post \
-    %{_rpmconfigdir}/brp-compress ; \
-    %{_rpmconfigdir}/brp-strip-static-archive %{__strip} ; \
-    %{_rpmconfigdir}/brp-strip-comment-note %{__strip} %{__objdump} ; \
-    /usr/lib/rpm/brp-python-bytecompile ; \
-    %{nil}
-
-%define netcat_package nc
 %define doc_hadoop %{_docdir}/%{name}-%{hadoop_version}
-%define alternatives_cmd alternatives
-%global initd_dir %{_sysconfdir}/rc.d/init.d
-%endif
-
-
-%if  %{?suse_version:1}0
-
-# Deactivating symlinks checks
-%define __os_install_post \
-    %{suse_check} ; \
-    /usr/lib/rpm/brp-compress ; \
-    %{nil}
-
-%define netcat_package netcat-openbsd
-%define doc_hadoop %{_docdir}/%{name}
-%define alternatives_cmd update-alternatives
-%global initd_dir %{_sysconfdir}/rc.d
-%endif
-
-%if  0%{?mgaversion}
-%define netcat_package netcat-openbsd
-%define doc_hadoop %{_docdir}/%{name}-%{hadoop_version}
-%define alternatives_cmd update-alternatives
-%global initd_dir %{_sysconfdir}/rc.d/init.d
-%endif
-
+%define alternatives_cmd /usr/sbin/alternatives
 
 # Even though we split the RPM into arch and noarch, it still will build and install
 # the entirety of hadoop. Defining this tells RPM not to fail the build
@@ -126,6 +84,8 @@
 # RPM searches perl files for dependancies and this breaks for non packaged perl lib
 # like thrift so disable this
 %define _use_internal_dependency_generator 0
+
+%define __jar_repack  %{nil}
 
 Name: %{hadoop_name}
 Version: %{hadoop_version}
@@ -177,37 +137,25 @@ Source39: tmpfiles.tmpl
 Patch0: patch0.diff
 Buildroot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id} -u -n)
 BuildRequires: fuse-devel, fuse, cmake
-Requires: coreutils, /usr/sbin/useradd, /usr/sbin/usermod, bigtop-utils >= 0.7, zookeeper >= 3.4.0
-Requires: psmisc, %{netcat_package}
+BuildRequires: pkgconfig, fuse-libs, redhat-rpm-config, lzo-devel, openssl-devel
+Requires: coreutils, /usr/sbin/useradd, /usr/sbin/usermod, bigtop-utils >= 1.1, zookeeper >= 3.4.0
+Requires: psmisc, nc
+# Required for init scripts
+Requires: /lib/lsb/init-functions
 # Sadly, Sun/Oracle JDK in RPM form doesn't provide libjvm.so, which means we have
 # to set AutoReq to no in order to minimize confusion. Not ideal, but seems to work.
 # I wish there was a way to disable just one auto dependency (libjvm.so)
 AutoReq: no
 
 %if 0%{?rhel} >= 7
-Requires: systemd
-BuildRequires: systemd-units
+Requires(post): systemd, systemd-sysv
+Requires(preun): systemd
+Requires(postun): systemd
+BuildRequires: systemd
 %else
-Requires: /sbin/chkconfig, /sbin/service
-%endif
-
-%if  %{?suse_version:1}0
-BuildRequires: pkg-config, libfuse2, libopenssl-devel, gcc-c++
-# Required for init scripts
-Requires: sh-utils, insserv
-%endif
-
-# CentOS 5 does not have any dist macro
-# So I will suppose anything that is not Mageia or a SUSE will be a RHEL/CentOS/Fedora
-%if %{!?suse_version:1}0 && %{!?mgaversion:1}0
-BuildRequires: pkgconfig, fuse-libs, redhat-rpm-config, lzo-devel, openssl-devel
-# Required for init scripts
-Requires: sh-utils, /lib/lsb/init-functions
-%endif
-
-%if  0%{?mgaversion}
-BuildRequires: pkgconfig, libfuse-devel, libfuse2 , libopenssl-devel, gcc-c++, liblzo-devel, zlib-devel
-Requires: chkconfig, xinetd-simple-services, zlib, initscripts
+Requires(post): initscripts chkconfig
+Requires(preun): initscripts chkconfig
+Requires(postun): initscripts chkconfig
 %endif
 
 
@@ -512,9 +460,6 @@ env HADOOP_VERSION=%{hadoop_base_version} bash %{SOURCE2} \
 # Workaround for BIGTOP-583
 %__rm -f $RPM_BUILD_ROOT/%{lib_hadoop}-*/lib/slf4j-log4j12-*.jar
 
-# Init.d scripts
-%__install -d -m 0755 $RPM_BUILD_ROOT/%{initd_dir}/
-
 # Install top level /etc/default files
 %__install -d -m 0755 $RPM_BUILD_ROOT/etc/default
 %__cp $RPM_SOURCE_DIR/hadoop.default $RPM_BUILD_ROOT/etc/default/hadoop
@@ -524,7 +469,10 @@ echo 'export JSVC_HOME=%{libexecdir}/bigtop-utils' >> $RPM_BUILD_ROOT/etc/defaul
 
 %if 0%{?rhel} && 0%{?rhel} >= 7
 %__install -d -m 0755 $RPM_BUILD_ROOT/%{_unitdir}
+%else
+%__install -d -m 0755 $RPM_BUILD_ROOT/%{_initrddir}/
 %endif
+
 # Generate the init.d scripts, unit files
 for service in %{hadoop_services}
 do
@@ -532,7 +480,7 @@ do
        bash %{SOURCE11} $RPM_SOURCE_DIR/%{name}-${service}.svc rpm $RPM_BUILD_ROOT/%{lib_hadoop}/libexec/%{name}-${service}
        %__install -m 0644 $RPM_SOURCE_DIR/%{name}-${service}.service $RPM_BUILD_ROOT/%{_unitdir}/%{name}-${service}.service
        %else
-       bash %{SOURCE11} $RPM_SOURCE_DIR/%{name}-${service}.svc rpm $RPM_BUILD_ROOT/%{initd_dir}/%{name}-${service}
+       bash %{SOURCE11} $RPM_SOURCE_DIR/%{name}-${service}.svc rpm $RPM_BUILD_ROOT/%{_initrddir}/%{name}-${service}
        %endif
        %__install -m 0644 $RPM_SOURCE_DIR/${service/-*/}.default $RPM_BUILD_ROOT/etc/default/%{name}-${service}
 done
@@ -649,7 +597,9 @@ fi
 %config(noreplace) %{etc_hadoop}/conf.empty/capacity-scheduler.xml
 %config(noreplace) %{etc_hadoop}/conf.empty/container-executor.cfg
 %config(noreplace) /etc/security/limits.d/yarn.conf
+%if 0%{?rhel} >= 7
 %config(noreplace) %{_sysconfdir}/tmpfiles.d/%{name}-yarn.conf
+%endif
 %{lib_hadoop}/libexec/yarn-config.sh
 %{lib_yarn}
 %attr(4754,root,yarn) %{lib_yarn}/bin/container-executor
@@ -663,7 +613,9 @@ fi
 %defattr(-,root,root)
 %config(noreplace) %{etc_hadoop}/conf.empty/hdfs-site.xml
 %config(noreplace) /etc/security/limits.d/hdfs.conf
+%if 0%{?rhel} >= 7
 %config(noreplace) %{_sysconfdir}/tmpfiles.d/%{name}-hdfs.conf
+%endif
 %{lib_hdfs}
 %{lib_hadoop}/libexec/hdfs-config.sh
 %{bin_hadoop}/hdfs
@@ -682,7 +634,9 @@ fi
 %config(noreplace) %{etc_hadoop}/conf.empty/mapred-queues.xml.template
 %config(noreplace) %{etc_hadoop}/conf.empty/mapred-site.xml.template
 %config(noreplace) /etc/security/limits.d/mapreduce.conf
+%if 0%{?rhel} >= 7
 %config(noreplace) %{_sysconfdir}/tmpfiles.d/%{name}-mapreduce.conf
+%endif
 %{lib_mapreduce}
 %{lib_hadoop}/libexec/mapred-config.sh
 %{bin_hadoop}/mapred
@@ -735,13 +689,15 @@ fi
 %defattr(-,root,root)
 %config(noreplace) %{etc_httpfs}
 %config(noreplace) %{_sysconfdir}/default/%{name}-httpfs
+%if 0%{?rhel} >= 7
 %config(noreplace) %{_sysconfdir}/tmpfiles.d/%{name}-httpfs.conf
+%endif
 %{lib_hadoop}/libexec/httpfs-config.sh
 %if 0%{?rhel} >= 7
 %{lib_hadoop}/libexec/hadoop-httpfs
 %{_unitdir}/%{name}-httpfs.service
 %else
-%{initd_dir}/%{name}-httpfs
+%{_initrddir}/%{name}-httpfs
 %endif
 %{lib_httpfs}
 %ghost %attr(0775,httpfs,httpfs) %{run_httpfs}
@@ -774,7 +730,7 @@ fi
 %define service_macro() \
 %files %1 \
 %defattr(-,root,root) \
-%{initd_dir}/%{name}-%1 \
+%{_initrddir}/%{name}-%1 \
 %config(noreplace) /etc/default/%{name}-%1 \
 %post %1 \
 chkconfig --add %{name}-%1 \
@@ -831,5 +787,4 @@ fi
 %attr(0644,root,root) %config(noreplace) /etc/default/hadoop-fuse
 %attr(0755,root,root) %{lib_hadoop}/bin/fuse_dfs
 %attr(0755,root,root) %{bin_hadoop}/hadoop-fuse-dfs
-
 

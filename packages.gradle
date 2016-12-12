@@ -342,6 +342,10 @@ def genTasks = { target ->
       from "${BASE_DIR}/bigtop-packages/src/templates/init.d.tmpl"
       into "$PKG_BUILD_DIR/rpm/SOURCES"
     }
+    copy {
+      from "${BASE_DIR}/bigtop-packages/src/templates/tmpfiles.tmpl"
+      into "$PKG_BUILD_DIR/rpm/SOURCES"
+    }
     fileTree ("$BASE_DIR/bigtop-packages/src/common/$NAME") {
       include '**/*'
     }.copy { into "$PKG_BUILD_DIR/rpm/SOURCES" }

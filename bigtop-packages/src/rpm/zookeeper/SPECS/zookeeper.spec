@@ -22,43 +22,8 @@
 %define svc_zookeeper_rest %{name}-rest
 %define man_dir %{_mandir}
 
-%if  %{?suse_version:1}0
-
-# Only tested on openSUSE 11.4. le'ts update it for previous release when confirmed
-%if 0%{suse_version} > 1130
-%define suse_check \# Define an empty suse_check for compatibility with older sles
-%endif
-
-# SLES is more strict anc check all symlinks point to valid path
-# But we do point to a hadoop jar which is not there at build time
-# (but would be at install time).
-# Since our package build system does not handle dependencies,
-# these symlink checks are deactivated
-%define __os_install_post \
-    %{suse_check} ; \
-    /usr/lib/rpm/brp-compress ; \
-    %{nil}
-
-
-%define doc_zookeeper %{_docdir}/%{name}
-%define alternatives_cmd update-alternatives
-%define alternatives_dep update-alternatives
-%define chkconfig_dep    aaa_base
-%define service_dep      aaa_base
-%global initd_dir %{_sysconfdir}/rc.d
-
-%else
-
 %define doc_zookeeper %{_docdir}/%{name}-%{zookeeper_version}
-%define alternatives_cmd alternatives
-%define alternatives_dep chkconfig 
-%define chkconfig_dep    chkconfig
-%define service_dep      initscripts
-%global initd_dir %{_sysconfdir}/rc.d/init.d
-
-%endif
-
-
+%define alternatives_cmd /usr/sbin/alternatives
 
 Name: zookeeper
 Version: %{zookeeper_version}
@@ -83,11 +48,9 @@ Source12: tmpfiles.tmpl
 #BIGTOP_PATCH_FILES
 BuildRequires: autoconf, automake, cppunit-devel
 Requires(pre): coreutils, /usr/sbin/groupadd, /usr/sbin/useradd
-Requires(post): %{alternatives_dep}
-Requires(preun): %{alternatives_dep}
-Requires: bigtop-utils >= 0.7
+Requires: bigtop-utils >= 1.1
 
-%description 
+%description
 ZooKeeper is a centralized service for maintaining configuration information, 
 naming, providing distributed synchronization, and providing group services. 
 All of these kinds of services are used in some form or another by distributed 
@@ -101,31 +64,18 @@ difficult to manage. Even when done correctly, different implementations of thes
 Summary: The Hadoop Zookeeper server
 Group: System/Daemons
 Requires: %{name} = %{version}-%{release}
-Requires(pre): %{name} = %{version}-%{release}
-Requires(post): %{chkconfig_dep}
-Requires(preun): %{service_dep}, %{chkconfig_dep}
-
-%if  0%{?mgaversion}
-# Required for init scripts
-Requires: initscripts
-%endif
-
-# CentOS 5 does not have any dist macro
-# So I will suppose anything that is not Mageia or a SUSE will be a RHEL/CentOS/Fedora
-%if %{!?suse_version:1}0 && %{!?mgaversion:1}0
-# Required for init scripts
 Requires: /lib/lsb/init-functions
+%if 0%{?rhel} >= 7
+Requires: systemd, systemd-sysv
+BuildRequires: systemd
+%else
+Requires(post): initscripts chkconfig
+Requires(preun):  initscripts chkconfig
+Requires(postun): initscripts chkconfig
 %endif
-
 
 %description server
 This package starts the zookeeper server on startup
-%if 0%{?rhel} >= 7
-Requires: systemd
-BuildRequires: systemd-units
-%else
-Requires: %{chkconfig_dep}, %{service_dep}
-%endif
 
 %package rest
 Summary: ZooKeeper REST Server
@@ -133,11 +83,12 @@ Group: System/Daemons
 Requires: %{name} = %{version}-%{release}
 Requires(pre): %{name} = %{version}-%{release}
 %if 0%{?rhel} >= 7
-Requires: systemd
-BuildRequires: systemd-units
+Requires: systemd, systemd-sysv
+BuildRequires: systemd
 %else
-Requires(post): %{chkconfig_dep}
-Requires(preun): %{service_dep}, %{chkconfig_dep}
+Requires(post): initscripts chkconfig
+Requires(preun):  initscripts chkconfig
+Requires(postun): initscripts chkconfig
 %endif
 
 %package native
@@ -179,9 +130,9 @@ rest_init_file=$RPM_BUILD_ROOT/%{lib_zookeeper}/libexec/%{svc_zookeeper_rest}
 %__install -d -m 0755 $RPM_BUILD_ROOT/%{_sysconfdir}/tmpfiles.d
 sed "s|__RUN_DIR__|%{run_zookeeper}|;s|__OWNER__|zookeeper|;s|__GROUP__|zookeeper|;s|__PERM__|0755|" %{SOURCE12} > $RPM_BUILD_ROOT/%{_sysconfdir}/tmpfiles.d/%{name}.conf
 %else
-%__install -d -m 0755 $RPM_BUILD_ROOT/%{initd_dir}
-server_init_file=$RPM_BUILD_ROOT/%{initd_dir}/%{svc_zookeeper}
-rest_init_file=$RPM_BUILD_ROOT/%{initd_dir}/%{svc_zookeeper_rest}
+%__install -d -m 0755 $RPM_BUILD_ROOT/%{_initrddir}
+server_init_file=$RPM_BUILD_ROOT/%{_initrddir}/%{svc_zookeeper}
+rest_init_file=$RPM_BUILD_ROOT/%{_initrddir}/%{svc_zookeeper_rest}
 %endif
 %__cp %{SOURCE3} $server_init_file
 bash $RPM_SOURCE_DIR/init.d.tmpl $RPM_SOURCE_DIR/zookeeper-rest.svc rpm $rest_init_file
@@ -256,7 +207,7 @@ fi
 %postun rest
 if [ $1 -ge 1 ]; then
 %if 0%{?rhel} >= 7
-  systemctl try-restart %{name}-%1 >/dev/null 2>&1 || :
+  systemctl try-restart %{name}-rest >/dev/null 2>&1 || :
 %else
   service %{svc_zookeeper_rest} condrestart > /dev/null 2>&1
 %endif
@@ -285,7 +236,7 @@ fi
 %attr(0644,root,root)%{_unitdir}/%{name}-server.service
 %attr(0755,root,root) %{lib_zookeeper}/libexec/%{svc_zookeeper}
 %else
-%attr(0755,root,root) %{initd_dir}/%{svc_zookeeper}
+%attr(0755,root,root) %{_initrddir}/%{svc_zookeeper}
 %endif
 
 %files rest
@@ -293,7 +244,7 @@ fi
 %attr(0644,root,root)%{_unitdir}/%{name}-rest.service
 %attr(0755,root,root) %{lib_zookeeper}/libexec/%{svc_zookeeper_rest}
 %else
-%attr(0755,root,root) %{initd_dir}/%{svc_zookeeper_rest}
+%attr(0755,root,root) %{_initrddir}/%{svc_zookeeper_rest}
 %endif
 
 %files native

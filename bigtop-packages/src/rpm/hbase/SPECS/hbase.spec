@@ -20,59 +20,17 @@
 %define conf_hbase %{hbase_home}/conf
 %define logs_hbase %{hbase_home}/logs
 %define pids_hbase %{hbase_home}/pids
+%define run_hbase %{_localstatedir}/run/hbase
 %define webapps_hbase %{hbase_home}/hbase-webapps
-%define man_dir %{_mandir}
 %define hbase_username hbase
+%define hbase_group hbase
 %define hbase_services master regionserver thrift thrift2 rest
 %define hadoop_home /usr/lib/hadoop
 %define zookeeper_home /usr/lib/zookeeper
-
-%if  %{?suse_version:1}0
-
-# Only tested on openSUSE 11.4. le'ts update it for previous release when confirmed
-%if 0%{suse_version} > 1130
-%define suse_check \# Define an empty suse_check for compatibility with older sles
-%endif
-
-# SLES is more strict anc check all symlinks point to valid path
-# But we do point to a hadoop jar which is not there at build time
-# (but would be at install time).
-# Since our package build system does not handle dependencies,
-# these symlink checks are deactivated
-%define __os_install_post \
-    %{suse_check} ; \
-    /usr/lib/rpm/brp-compress ; \
-    %{nil}
-
-%define doc_hbase %{_docdir}/%{name}
-%global initd_dir %{_sysconfdir}/rc.d
-%define alternatives_cmd update-alternatives
-
-%else
-
-# CentOS 5 does not have any dist macro
-# So I will suppose anything that is not Mageia or a SUSE will be a RHEL/CentOS/Fedora
-%if %{!?mgaversion:1}0
-
-# FIXME: brp-repack-jars uses unzip to expand jar files
-# Unfortunately guice-2.0.jar pulled by ivy contains some files and directories without any read permission
-# and make whole process to fail.
-# So for now brp-repack-jars is being deactivated until this is fixed.
-# See BIGTOP-294
-%define __os_install_post \
-    %{_rpmconfigdir}/brp-compress ; \
-    %{_rpmconfigdir}/brp-strip-static-archive %{__strip} ; \
-    %{_rpmconfigdir}/brp-strip-comment-note %{__strip} %{__objdump} ; \
-    /usr/lib/rpm/brp-python-bytecompile ; \
-    %{nil}
-%endif
-
-
 %define doc_hbase %{_docdir}/%{name}-%{hbase_version}
-%global initd_dir %{_sysconfdir}/rc.d/init.d
-%define alternatives_cmd alternatives
+%define alternatives_cmd /usr/sbin/alternatives
 
-%endif
+%define __jar_repack  %{nil}
 
 
 Name: hbase
@@ -92,24 +50,12 @@ Source5: hbase.default
 Source6: hbase.nofiles.conf
 Source7: regionserver-init.d.tpl
 Source8: hbase-systemd.service.tpl
+Source9: tmpfiles.tmpl
 BuildArch: noarch
 Requires: coreutils, /usr/sbin/useradd
-Requires: hadoop-client, zookeeper >= 3.3.1, bigtop-utils >= 0.7
+Requires: hadoop-client, zookeeper >= 3.3.1, bigtop-utils >= 1.1
 
-%if  0%{?mgaversion}
-Requires: bsh-utils
-%else
-Requires: sh-utils
-%endif
-
-%if 0%{?rhel} >= 7
-Requires: systemd
-BuildRequires: systemd-units
-%else
-Requires: /sbin/chkconfig, /sbin/service
-%endif
-
-%description 
+%description
 HBase is an open-source, distributed, column-oriented store modeled after Google' Bigtable: A Distributed Storage System for Structured Data by Chang et al. Just as Bigtable leverages the distributed data storage provided by the Google File System, HBase provides Bigtable-like capabilities on top of Hadoop. HBase includes:
 
     * Convenient base classes for backing Hadoop MapReduce jobs with HBase tables
@@ -126,23 +72,17 @@ Summary: The Hadoop HBase master Server.
 Group: System/Daemons
 Requires: %{name} = %{version}-%{release}
 Requires(pre): %{name} = %{version}-%{release}
-
-%if  %{?suse_version:1}0
-# Required for init scripts
-Requires: insserv
+%if 0%{?rhel} >= 7
+Requires(post): systemd, systemd-sysv
+Requires(preun): systemd
+Requires(postun): systemd
+BuildRequires: systemd
+%else
+Requires(post): initscripts chkconfig
+Requires(preun): initscripts chkconfig
+Requires(postun): initscripts chkconfig
 %endif
-
-%if  0%{?mgaversion}
-# Required for init scripts
-Requires: initscripts
-%endif
-
-# CentOS 5 does not have any dist macro
-# So I will suppose anything that is not Mageia or a SUSE will be a RHEL/CentOS/Fedora
-%if %{!?suse_version:1}0 && %{!?mgaversion:1}0
-# Required for init scripts
 Requires: /lib/lsb/init-functions
-%endif
 
 %description master
 HMaster is the "master server" for a HBase. There is only one HMaster for a single HBase deployment.
@@ -152,22 +92,16 @@ Summary: The Hadoop HBase RegionServer server.
 Group: System/Daemons
 Requires: %{name} = %{version}-%{release}
 Requires(pre): %{name} = %{version}-%{release}
-
-%if  %{?suse_version:1}0
-# Required for init scripts
-Requires: insserv
-%endif
-
-%if  0%{?mgaversion}
-# Required for init scripts
-Requires: initscripts
-%endif
-
-# CentOS 5 does not have any dist macro
-# So I will suppose anything that is not Mageia or a SUSE will be a RHEL/CentOS/Fedora
-%if %{!?suse_version:1}0 && %{!?mgaversion:1}0
-# Required for init scripts
 Requires: /lib/lsb/init-functions
+%if 0%{?rhel} >= 7
+Requires(post): systemd, systemd-sysv
+Requires(preun): systemd
+Requires(postun): systemd
+BuildRequires: systemd
+%else
+Requires(post): initscripts chkconfig
+Requires(preun): initscripts chkconfig
+Requires(postun): initscripts chkconfig
 %endif
 
 
@@ -179,23 +113,17 @@ Summary: The Hadoop HBase Thrift Interface
 Group: System/Daemons
 Requires: %{name} = %{version}-%{release}
 Requires(pre): %{name} = %{version}-%{release}
-
-%if  %{?suse_version:1}0
-# Required for init scripts
-Requires: insserv
+%if 0%{?rhel} >= 7
+Requires(post): systemd, systemd-sysv
+Requires(preun): systemd
+Requires(postun): systemd
+BuildRequires: systemd
+%else
+Requires(post): initscripts chkconfig
+Requires(preun): initscripts chkconfig
+Requires(postun): initscripts chkconfig
 %endif
-
-%if  0%{?mgaversion}
-# Required for init scripts
-Requires: initscripts
-%endif
-
-# CentOS 5 does not have any dist macro
-# So I will suppose anything that is not Mageia or a SUSE will be a RHEL/CentOS/Fedora
-%if %{!?suse_version:1}0 && %{!?mgaversion:1}0
-# Required for init scripts
 Requires: /lib/lsb/init-functions
-%endif
 
 
 %description thrift
@@ -207,23 +135,17 @@ Summary: The Hadoop HBase Thrift2 Interface
 Group: System/Daemons
 Requires: %{name} = %{version}-%{release}
 Requires(pre): %{name} = %{version}-%{release}
-
-%if  %{?suse_version:1}0
-# Required for init scripts
-Requires: insserv
+%if 0%{?rhel} >= 7
+Requires(post): systemd, systemd-sysv
+Requires(preun): systemd
+Requires(postun): systemd
+BuildRequires: systemd
+%else
+Requires(post): initscripts chkconfig
+Requires(preun): initscripts chkconfig
+Requires(postun): initscripts chkconfig
 %endif
-
-%if  0%{?mgaversion}
-# Required for init scripts
-Requires: initscripts
-%endif
-
-# CentOS 5 does not have any dist macro
-# So I will suppose anything that is not Mageia or a SUSE will be a RHEL/CentOS/Fedora
-%if %{!?suse_version:1}0 && %{!?mgaversion:1}0
-# Required for init scripts
 Requires: /lib/lsb/init-functions
-%endif
 
 
 %description thrift2
@@ -237,31 +159,24 @@ BuildArch: noarch
 Obsoletes: %{name}-docs
 
 %description doc
-Documentation for Hbase
+Documentation for HBase
 
 %package rest
 Summary: The Apache HBase REST gateway
 Group: System/Daemons
 Requires: %{name} = %{version}-%{release}
 Requires(pre): %{name} = %{version}-%{release}
-
-%if  %{?suse_version:1}0
-# Required for init scripts
-Requires: insserv
+%if 0%{?rhel} >= 7
+Requires(post): systemd, systemd-sysv
+Requires(preun): systemd
+Requires(postun): systemd
+BuildRequires: systemd
+%else
+Requires(post): initscripts chkconfig
+Requires(preun): initscripts chkconfig
+Requires(postun): initscripts chkconfig
 %endif
-
-%if  0%{?mgaversion}
-# Required for init scripts
-Requires: initscripts
-%endif
-
-# CentOS 5 does not have any dist macro
-# So I will suppose anything that is not Mageia or a SUSE will be a RHEL/CentOS/Fedora
-%if %{!?suse_version:1}0 && %{!?mgaversion:1}0
-# Required for init scripts
 Requires: /lib/lsb/init-functions
-%endif
-
 
 %description rest
 The Apache HBase REST gateway
@@ -275,12 +190,12 @@ env HBASE_VERSION=%{version} bash %{SOURCE1}
 %install
 %__rm -rf $RPM_BUILD_ROOT
 bash %{SOURCE2} \
-	--build-dir=build \
-        --doc-dir=%{doc_hbase} \
-        --conf-dir=%{etc_hbase_conf_dist} \
-	--prefix=$RPM_BUILD_ROOT
+  --build-dir=build \
+  --doc-dir=%{doc_hbase} \
+  --conf-dir=%{etc_hbase_conf_dist} \
+  --prefix=$RPM_BUILD_ROOT
 
-%__install -d -m 0755 $RPM_BUILD_ROOT/%{initd_dir}/
+%__install -d -m 0755 $RPM_BUILD_ROOT/%{_initrddir}/
 
 %__install -d -m 0755 $RPM_BUILD_ROOT/etc/default/
 %__install -m 0644 %{SOURCE5} $RPM_BUILD_ROOT/etc/default/%{name}
@@ -298,6 +213,8 @@ ln -s %{_localstatedir}/run/%{name} %{buildroot}/%{pids_hbase}
 
 %if 0%{?rhel} >= 7
 %__install -d -m 0755 %{buildroot}/%{_unitdir}
+%__install -d -m 0755 $RPM_BUILD_ROOT/%{_sysconfdir}/tmpfiles.d
+sed "s|__RUN_DIR__|%{run_hbase}|;s|__OWNER__|%{hbase_username}|;s|__GROUP__|%{hbase_group}|;s|__PERM__|0755|" %{SOURCE9} > $RPM_BUILD_ROOT/%{_sysconfdir}/tmpfiles.d/%{name}.conf
 %endif
 
 for service in %{hbase_services}
@@ -309,7 +226,7 @@ do
     %__cp %{SOURCE8} ${unit_file}
     %__sed -i -e "s|__SERVICE__|${service}|" ${unit_file}
 %else
-    init_file=$RPM_BUILD_ROOT/%{initd_dir}/%{name}-${service}
+    init_file=$RPM_BUILD_ROOT/%{_initrddir}/%{name}-${service}
 %endif
     if [[ "$service" = "regionserver" ]] ; then
         # Region servers start from a different template that allows
@@ -353,32 +270,32 @@ getent passwd hbase 2>&1 > /dev/null || /usr/sbin/useradd -c "HBase" -s /sbin/no
 
 %post
 %{alternatives_cmd} --install %{etc_hbase_conf} %{name}-conf %{etc_hbase_conf_dist} 30
+%if 0%{?rhel} >= 7
+systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/%{name}.conf
+%endif
 
 %preun
 if [ "$1" = 0 ]; then
-        %{alternatives_cmd} --remove %{name}-conf %{etc_hbase_conf_dist} || :
+  %{alternatives_cmd} --remove %{name}-conf %{etc_hbase_conf_dist} || :
 fi
 
 
 #######################
 #### FILES SECTION ####
 #######################
-%files 
+%files
 %defattr(-,hbase,hbase)
-%{logs_hbase}
-%{pids_hbase}
 %dir %{_localstatedir}/log/hbase
-%dir %{_localstatedir}/run/hbase
 %dir %{_localstatedir}/lib/hbase
-
 %defattr(-,root,root)
 %config(noreplace) %{_sysconfdir}/default/hbase
 %config(noreplace) /etc/security/limits.d/hbase.nofiles.conf
-%{hbase_home}
-%{hbase_home}/hbase-*.jar
-%{webapps_hbase}
-/usr/bin/hbase
 %config(noreplace) %{etc_hbase_conf_dist}
+%if 0%{?rhel} >= 7
+%config(noreplace) %{_sysconfdir}/tmpfiles.d/%{name}.conf
+%endif
+%{hbase_home}
+/usr/bin/hbase
 
 %files doc
 %defattr(-,root,root)
@@ -404,7 +321,7 @@ fi
 %else
 %define service_macro() \
 %files %1 \
-%attr(0755,root,root)/%{initd_dir}/%{name}-%1 \
+%attr(0755,root,root)/%{_initrddir}/%{name}-%1 \
 %post %1 \
 chkconfig --add %{name}-%1 \
 \
