@@ -15,37 +15,9 @@
 %define tez_home /usr/lib/%{name}
 %define lib_tez %{tez_home}/lib
 %define man_dir %{_mandir}
-
-
-%if %{!?suse_version:1}0 && %{!?mgaversion:1}0
-
-%define __os_install_post \
-    %{_rpmconfigdir}/brp-compress ; \
-    %{_rpmconfigdir}/brp-strip-static-archive %{__strip} ; \
-    %{_rpmconfigdir}/brp-strip-comment-note %{__strip} %{__objdump} ; \
-    /usr/lib/rpm/brp-python-bytecompile ; \
-    %{nil}
-
 %define doc_tez %{_docdir}/tez-%{tez_version}
 
-%endif
-
-
-%if  %{?suse_version:1}0
-
-# Only tested on openSUSE 11.4. le'ts update it for previous release when confirmed
-%if 0%{suse_version} > 1130
-%define suse_check \# Define an empty suse_check for compatibility with older sles
-%endif
-
-%define doc_tez %{_docdir}/tez
-%define alternatives_cmd update-alternatives
-%define __os_install_post \
-    %{suse_check} ; \
-    /usr/lib/rpm/brp-compress ; \
-    %{nil}
-
-%endif
+%define __jar_repack  %{nil}
 
 Name: tez
 Version: %{tez_version}
@@ -64,13 +36,7 @@ Source5: bigtop.bom
 Source6: init.d.tmpl
 #BIGTOP_PATCH_FILES
 BuildArch: noarch
-Requires: hadoop hadoop-hdfs hadoop-yarn hadoop-mapreduce
-
-%if  0%{?mgaversion}
-Requires: bsh-utils
-%else
-Requires: sh-utils
-%endif
+Requires: coreutils hadoop hadoop-hdfs hadoop-yarn hadoop-mapreduce
 
 
 %description

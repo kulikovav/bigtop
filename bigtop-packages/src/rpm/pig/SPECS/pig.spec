@@ -13,63 +13,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 %define pig_name pig
-%define etc_pig /etc/%{pig_name}
+%define etc_pig %{_sysconfdir}/%{pig_name}
 %define config_pig %{etc_pig}/conf
 %define lib_pig /usr/lib/%{pig_name}
 %define log_pig /var/log/%{pig_name}
 %define bin_pig /usr/bin
 %define pig_config_virtual pig_active_configuration
-%define man_dir %{_mandir}
 %define hive_home /usr/lib/hive
 %define zookeeper_home /usr/lib/zookeeper
 %define hbase_home /usr/lib/hbase
 %define tez_home /usr/lib/tez
-#BIGTOP_PATCH_FILES
-
-# CentOS 5 does not have any dist macro
-# So I will suppose anything that is not Mageia or a SUSE will be a RHEL/CentOS/Fedora
-%if %{!?suse_version:1}0 && %{!?mgaversion:1}0
-
-# FIXME: brp-repack-jars uses unzip to expand jar files
-# Unfortunately aspectjtools-1.6.5.jar pulled by ivy contains some files and directories without any read permission
-# and make whole process to fail.
-# So for now brp-repack-jars is being deactivated until this is fixed.
-# See BIGTOP-294
-%define __os_install_post \
-    %{_rpmconfigdir}/brp-compress ; \
-    %{_rpmconfigdir}/brp-strip-static-archive %{__strip} ; \
-    %{_rpmconfigdir}/brp-strip-comment-note %{__strip} %{__objdump} ; \
-    /usr/lib/rpm/brp-python-bytecompile ; \
-    %{nil}
-
 %define doc_pig %{_docdir}/pig-%{pig_version}
-%define alternatives_cmd alternatives
+%define alternatives_cmd /usr/sbin/alternatives
 
-%endif
-
-
-%if  %{?suse_version:1}0
-
-# Only tested on openSUSE 11.4. le'ts update it for previous release when confirmed
-%if 0%{suse_version} > 1130
-%define suse_check \# Define an empty suse_check for compatibility with older sles
-%endif
-
-%define doc_pig %{_docdir}/pig
-%define alternatives_cmd update-alternatives
-%define __os_install_post \
-    %{suse_check} ; \
-    /usr/lib/rpm/brp-compress ; \
-    %{nil}
-
-%endif
-
-
-%if  0%{?mgaversion}
-%define doc_pig %{_docdir}/pig-%{pig_version}
-%define alternatives_cmd update-alternatives
-%endif
-
+%define __jar_repack  %{nil}
 
 Name: pig
 Version: %{pig_version}
@@ -85,7 +42,9 @@ Source1: do-component-build
 Source2: install_pig.sh
 Source3: pig.1
 Source4: bigtop.bom
-Requires: hadoop-client, hbase, hive, zookeeper, tez, bigtop-utils >= 0.7
+Requires: hadoop-client, hbase, hive, zookeeper, tez, bigtop-utils >= 1.1
+#BIGTOP_PATCH_FILES
+
 
 %description 
 Pig is a platform for analyzing large data sets that consists of a high-level language 
