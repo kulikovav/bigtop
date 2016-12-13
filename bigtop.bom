@@ -100,7 +100,7 @@ bigtop {
       name    = 'zookeeper'
       pkg     = name
       version {
-        base  = '3.4.9'
+        base  = '3.4.6'
         pkg   = base
         release = 1
       }
