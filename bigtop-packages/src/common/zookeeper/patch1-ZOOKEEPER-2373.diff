@@ -1,0 +1,59 @@
+From 7f29a5eef594b7b9e27a84d91245db125320fff6 Mon Sep 17 00:00:00 2001
+From: "Patrick D. Hunt" <phunt@apache.org>
+Date: Thu, 3 Mar 2016 21:17:05 +0000
+Subject: [PATCH] ZOOKEEPER-2373 Licenses section missing from pom file - part
+ 2 missed an added file (phunt)
+
+git-svn-id: https://svn.apache.org/repos/asf/zookeeper/branches/branch-3.4@1733527 13f79535-47bb-0310-9956-ffa450edef68
+---
+ src/pom.template | 41 +++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 41 insertions(+)
+ create mode 100644 src/pom.template
+
+diff --git a/src/pom.template b/src/pom.template
+new file mode 100644
+index 0000000..a02c0b3
+--- /dev/null
++++ b/src/pom.template
+@@ -0,0 +1,41 @@
++SKIP_LINE  ***************************************************************
++SKIP_LINE  * Licensed to the Apache Software Foundation (ASF) under one
++SKIP_LINE  * or more contributor license agreements.  See the NOTICE file
++SKIP_LINE  * distributed with this work for additional information
++SKIP_LINE  * regarding copyright ownership.  The ASF licenses this file
++SKIP_LINE  * to you under the Apache License, Version 2.0 (the
++SKIP_LINE  * "License"); you may not use this file except in compliance
++SKIP_LINE  * with the License.  You may obtain a copy of the License at
++SKIP_LINE  * 
++SKIP_LINE  *   http://www.apache.org/licenses/LICENSE-2.0
++SKIP_LINE  * 
++SKIP_LINE  * Unless required by applicable law or agreed to in writing,
++SKIP_LINE  * software distributed under the License is distributed on an
++SKIP_LINE  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++SKIP_LINE  * KIND, either express or implied.  See the License for the
++SKIP_LINE  * specific language governing permissions and limitations
++SKIP_LINE  * under the License.
++SKIP_LINE  ***************************************************************
++<?xml version="1.0" encoding="UTF-8"?>
++${ivy.pom.license}
++${ivy.pom.header}
++<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
++    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
++
++  <modelVersion>4.0.0</modelVersion>
++  <groupId>${ivy.pom.groupId}</groupId>
++  <artifactId>${ivy.pom.artifactId}</artifactId>
++  <packaging>${ivy.pom.packaging}</packaging>
++  <version>${ivy.pom.version}</version>
++  <name>${ivy.pom.name}</name>
++  <description>${ivy.pom.description}</description>
++  <url>${ivy.pom.url}</url>
++
++  <licenses>
++    <license>
++      <name>The Apache Software License, Version 2.0</name>
++      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
++      <distribution>repo</distribution>
++   </license>
++  </licenses>
++</project>
