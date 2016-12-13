@@ -134,7 +134,7 @@ Source36: hadoop-yarn-nodemanager.service
 Source37: hadoop-hdfs-zkfc.service
 Source38: hadoop-hdfs-journalnode.service
 Source39: tmpfiles.tmpl
-Patch0: patch0.diff
+#BIGTOP_PATCH_FILES
 Buildroot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id} -u -n)
 BuildRequires: fuse-devel, fuse, cmake
 BuildRequires: pkgconfig, fuse-libs, redhat-rpm-config, lzo-devel, openssl-devel
@@ -421,7 +421,8 @@ These projects (enumerated below) allow HDFS to be mounted (on most flavors of U
 %prep
 %setup -n %{name}-%{hadoop_base_version}-src
 
-%patch0 -p1
+#BIGTOP_PATCH_COMMANDS
+
 %build
 # This assumes that you installed Java JDK 6 and set JAVA_HOME
 # This assumes that you installed Forrest and set FORREST_HOME
