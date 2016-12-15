@@ -14,22 +14,17 @@
 # limitations under the License.
 
 class bigtop_toolchain::env {
-  $java_version = '1.7.0'
+  case "$::operatingsystem $::operatingsystemrelease" {
+    default: { $java_version = '1.8.0' }
+    }
   $java = "java-${java_version}"
 
   case $architecture {
     'amd64' : { $arch= "amd64" }
-    'ppc64le' : { $arch= "ppc64el" }
   }
   case $operatingsystem {
-    'Ubuntu','Debian': {
-      $javahome = "/usr/lib/jvm/${java}-openjdk-$arch"
-    }
     'Fedora','Centos', 'Amazon': {
       $javahome = "/usr/lib/jvm/${java}"
-    }
-    'OpenSuSE' : {
-      $javahome = "/usr/lib64/jvm/${java}-openjdk-${java_version}"
     }
   }
   file { '/etc/profile.d/bigtop.sh':

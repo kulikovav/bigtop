@@ -86,7 +86,7 @@ class bigtop_toolchain::packages {
       "bzip2-devel"
     ] }
   package { $pkgs:
-    ensure => installed,
+    ensure => installed
   }
 
   # Some bigtop packages use `/usr/lib/rpm/redhat` tools

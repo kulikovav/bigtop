@@ -14,8 +14,7 @@
 # limitations under the License.
 
 class bigtop_toolchain::jdk {
-
-  case $operatingsystem {
+  case $::operatingsystem {
     /(CentOS|Amazon)/: {
       package { 'java-1.7.0-openjdk-devel' :
         ensure => present
@@ -23,6 +22,7 @@ class bigtop_toolchain::jdk {
       package { 'java-1.8.0-openjdk-devel' :
         ensure => present
       }
+      # java 1.8 
     }
   }
 }
