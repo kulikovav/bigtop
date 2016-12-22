@@ -15,14 +15,10 @@
 
 class bigtop_toolchain::jdk {
   case $::operatingsystem {
-    /(CentOS|Amazon)/: {
-      package { 'java-1.7.0-openjdk-devel' :
-        ensure => present
-      }
+    /(CentOS|Amazon|Fedora)/: {
       package { 'java-1.8.0-openjdk-devel' :
         ensure => present
       }
-      # java 1.8 
     }
   }
 }
