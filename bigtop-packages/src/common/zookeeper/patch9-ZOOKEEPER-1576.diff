@@ -1,0 +1,142 @@
+diff -uNr zookeeper-3.4.6/src/java/main/org/apache/zookeeper/client/StaticHostProvider.java zookeeper-3.4.6-b/src/java/main/org/apache/zookeeper/client/StaticHostProvider.java
+--- zookeeper-3.4.6/src/java/main/org/apache/zookeeper/client/StaticHostProvider.java	2014-02-20 14:14:09.000000000 +0400
++++ zookeeper-3.4.6-b/src/java/main/org/apache/zookeeper/client/StaticHostProvider.java	2016-12-26 11:28:32.000000000 +0400
+@@ -50,34 +50,36 @@
+      * 
+      * @param serverAddresses
+      *            possibly unresolved ZooKeeper server addresses
+-     * @throws UnknownHostException
+      * @throws IllegalArgumentException
+      *             if serverAddresses is empty or resolves to an empty list
+      */
+-    public StaticHostProvider(Collection<InetSocketAddress> serverAddresses)
+-            throws UnknownHostException {
++    public StaticHostProvider(Collection<InetSocketAddress> serverAddresses) {
+         for (InetSocketAddress address : serverAddresses) {
+-            InetAddress ia = address.getAddress();
+-            InetAddress resolvedAddresses[] = InetAddress.getAllByName((ia!=null) ? ia.getHostAddress():
+-                address.getHostName());
+-            for (InetAddress resolvedAddress : resolvedAddresses) {
+-                // If hostName is null but the address is not, we can tell that
+-                // the hostName is an literal IP address. Then we can set the host string as the hostname
+-                // safely to avoid reverse DNS lookup.
+-                // As far as i know, the only way to check if the hostName is null is use toString().
+-                // Both the two implementations of InetAddress are final class, so we can trust the return value of
+-                // the toString() method.
+-                if (resolvedAddress.toString().startsWith("/") 
+-                        && resolvedAddress.getAddress() != null) {
+-                    this.serverAddresses.add(
+-                            new InetSocketAddress(InetAddress.getByAddress(
+-                                    address.getHostName(),
+-                                    resolvedAddress.getAddress()), 
+-                                    address.getPort()));
+-                } else {
+-                    this.serverAddresses.add(new InetSocketAddress(resolvedAddress.getHostAddress(), address.getPort()));
+-                }  
+-            }
++        	try {
++	            InetAddress ia = address.getAddress();
++	            InetAddress resolvedAddresses[] = InetAddress.getAllByName((ia!=null) ? ia.getHostAddress():
++	                address.getHostName());
++	            for (InetAddress resolvedAddress : resolvedAddresses) {
++	                // If hostName is null but the address is not, we can tell that
++	                // the hostName is an literal IP address. Then we can set the host string as the hostname
++	                // safely to avoid reverse DNS lookup.
++	                // As far as i know, the only way to check if the hostName is null is use toString().
++	                // Both the two implementations of InetAddress are final class, so we can trust the return value of
++	                // the toString() method.
++	                if (resolvedAddress.toString().startsWith("/") 
++	                        && resolvedAddress.getAddress() != null) {
++	                    this.serverAddresses.add(
++	                            new InetSocketAddress(InetAddress.getByAddress(
++	                                    address.getHostName(),
++	                                    resolvedAddress.getAddress()), 
++	                                    address.getPort()));
++	                } else {
++	                    this.serverAddresses.add(new InetSocketAddress(resolvedAddress.getHostAddress(), address.getPort()));
++	                }  
++	            }
++        	} catch (UnknownHostException e){
++        		LOG.error("Unable to connect to server: {}", address, e);
++        	}
+         }
+         
+         if (this.serverAddresses.isEmpty()) {
+diff -uNr zookeeper-3.4.6/src/java/test/org/apache/zookeeper/test/StaticHostProviderTest.java zookeeper-3.4.6-b/src/java/test/org/apache/zookeeper/test/StaticHostProviderTest.java
+--- zookeeper-3.4.6/src/java/test/org/apache/zookeeper/test/StaticHostProviderTest.java	2014-02-20 14:14:10.000000000 +0400
++++ zookeeper-3.4.6-b/src/java/test/org/apache/zookeeper/test/StaticHostProviderTest.java	2016-12-26 11:28:32.000000000 +0400
+@@ -42,7 +42,7 @@
+     private static final Logger LOG = LoggerFactory.getLogger(StaticHostProviderTest.class);
+     
+     @Test
+-    public void testNextGoesRound() throws UnknownHostException {
++    public void testNextGoesRound() {
+         HostProvider hostProvider = getHostProvider((byte) 2);
+         InetSocketAddress first = hostProvider.next(0);
+         assertTrue(first instanceof InetSocketAddress);
+@@ -51,7 +51,7 @@
+     }
+ 
+     @Test
+-    public void testNextGoesRoundAndSleeps() throws UnknownHostException {
++    public void testNextGoesRoundAndSleeps() {
+         byte size = 2;
+         HostProvider hostProvider = getHostProvider(size);
+         while (size > 0) {
+@@ -65,7 +65,7 @@
+     }
+ 
+     @Test
+-    public void testNextDoesNotSleepForZero() throws UnknownHostException {
++    public void testNextDoesNotSleepForZero() {
+         byte size = 2;
+         HostProvider hostProvider = getHostProvider(size);
+         while (size > 0) {
+@@ -86,7 +86,7 @@
+     }
+ 
+     @Test
+-    public void testOnConnectDoesNotReset() throws UnknownHostException {
++    public void testOnConnectDoesNotReset() {
+         HostProvider hostProvider = getHostProvider((byte) 2);
+         InetSocketAddress first = hostProvider.next(0);
+         hostProvider.onConnected();
+@@ -110,8 +110,26 @@
+         }
+     }
+ 
+-    private StaticHostProvider getHostProviderUnresolved(byte size)
+-            throws UnknownHostException {
++    @Test(expected = IllegalArgumentException.class)
++    public void testTwoInvalidHostAddresses() {
++        ArrayList<InetSocketAddress> list = new ArrayList<InetSocketAddress>();
++        list.add(new InetSocketAddress("a", 2181));
++        list.add(new InetSocketAddress("b", 2181));
++        new StaticHostProvider(list);
++    }
++
++    public void testOneInvalidHostAddresses() {
++        Collection<InetSocketAddress> addr = getUnresolvedServerAddresses((byte) 1);
++        addr.add(new InetSocketAddress("a", 2181));
++
++        StaticHostProvider sp = new StaticHostProvider(addr);
++        InetSocketAddress n1 = sp.next(0);
++        InetSocketAddress n2 = sp.next(0);
++
++        assertEquals(n2, n1);
++    }
++
++    private StaticHostProvider getHostProviderUnresolved(byte size) {
+         return new StaticHostProvider(getUnresolvedServerAddresses(size));
+     }
+ 
+@@ -124,8 +142,7 @@
+         return list;
+     }
+     
+-    private StaticHostProvider getHostProvider(byte size)
+-            throws UnknownHostException {
++    private StaticHostProvider getHostProvider(byte size) {
+         ArrayList<InetSocketAddress> list = new ArrayList<InetSocketAddress>(
+                 size);
+         while (size > 0) {
