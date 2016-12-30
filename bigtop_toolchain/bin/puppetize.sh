@@ -31,34 +31,6 @@ else
 fi
 
 case ${ID}-${VERSION_ID} in
-    fedora-20*)
-	# Work around issue in fedora:20 docker image
-	yum -y install yum-utils;  yum-config-manager --enable updates-testing
-        rpm -ivh https://yum.puppetlabs.com/puppetlabs-release-fedora-20.noarch.rpm
-        yum update
-	yum -y install hostname curl sudo unzip wget puppet
-	;;
-    ubuntu-14.04)
-	apt-get -y install wget
-	if [ $HOSTTYPE = "x86_64" ] ; then
-	  # BIGTOP-2003. A workaround to install newer hiera to get rid of hiera 1.3.0 bug.
-	  wget -O /tmp/puppetlabs-release-trusty.deb https://apt.puppetlabs.com/puppetlabs-release-trusty.deb && dpkg -i /tmp/puppetlabs-release-trusty.deb
-	  rm -f /tmp/puppetlabs-release-trusty.deb
-	  apt-get update
-        fi
-	apt-get -y install curl sudo unzip puppet software-properties-common
-	;;
-    ubuntu-15*)
-	apt-get update
-	apt-get -y install curl sudo unzip wget puppet software-properties-common
-	;;
-    debian-8*)
-	apt-get update
-	apt-get -y install curl sudo unzip wget puppet
-	;;
-    opensuse-13.2)
-	zypper --gpg-auto-import-keys install -y curl sudo unzip wget puppet suse-release ca-certificates-mozilla net-tools tar
-	;;
     centos-6*)
         rpm -ivh http://yum.puppetlabs.com/puppetlabs-release-el-6.noarch.rpm
 	yum -y install curl sudo unzip wget puppet tar
