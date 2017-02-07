@@ -252,5 +252,23 @@ bigtop {
                 site = "${apache.APACHE_MIRROR}/${download_path}"
                 archive = "${apache.APACHE_ARCHIVE}/${download_path}" }
     }
+    'influxdb' {
+      name    = 'influxdb'
+      relNotes = 'InfluxData InfluxDB'
+      version { base = '1.2.0'; pkg = base; release = 1 }
+      tarball { destination = "$name-${version.base}.tar.gz"
+                source      = "influxdb-${version.base}_linux_amd64.tar.gz" }
+      url     { site = "https://dl.influxdata.com/influxdb/releases"
+                archive = site }
+    }
+    'grafana' {
+      name    = 'grafana'
+      relNotes = 'Grafana'
+      version { base = '4.1.1'; pkg = base; buildstamp = 1484211277; release = 1 }
+      tarball { destination = "$name-${version.base}.tar.gz"
+                source      = "grafana-${version.base}-${version.buildstamp}.linux-x64.tar.gz" }
+      url     { site = "https://grafanarel.s3.amazonaws.com/builds"
+                archive = site }
+    }
   }
 }
