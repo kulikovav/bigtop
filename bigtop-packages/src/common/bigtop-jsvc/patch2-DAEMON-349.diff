@@ -1,18 +1,3 @@
-diff -ruN commons-daemon-1.0.15-native-src/unix/support/apsupport.m4 commons-daemon-1.0.15-native-src.new/unix/support/apsupport.m4
---- commons-daemon-1.0.15-native-src/unix/support/apsupport.m4	2013-03-28 12:53:58.000000000 +0000
-+++ commons-daemon-1.0.15-native-src.new/unix/support/apsupport.m4	2016-12-14 20:01:56.447897270 +0000
-@@ -171,6 +171,11 @@
-     supported_os="linux"
-     HOST_CPU=aarch64
-     ;;
-+  powerpc64le*)
-+    CFLAGS="$CFLAGS -DCPU=\\\"powerpc64le\\\""
-+    supported_os="linux"
-+    HOST_CPU=powerpc64le
-+    ;;
-   *)
-     AC_MSG_RESULT([failed])
-     AC_MSG_ERROR([Unsupported CPU architecture "$host_cpu"]);;
 diff -ruN commons-daemon-1.0.15-native-src/unix/support/buildconf.sh commons-daemon-1.0.15-native-src.new/unix/support/buildconf.sh
 --- commons-daemon-1.0.15-native-src/unix/support/buildconf.sh	2013-03-28 12:53:58.000000000 +0000
 +++ commons-daemon-1.0.15-native-src.new/unix/support/buildconf.sh	2016-12-14 20:02:35.360739540 +0000
