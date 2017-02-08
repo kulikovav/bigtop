@@ -6,7 +6,7 @@ Release:           %{grafana_release}
 Summary:           Grafana provides a powerful and elegant way to create, explore, and share dashboards and data with your team and the world. 
 Group:             Application/Internet
 License:           MIT
-URL:               https://grafana.org
+URL:               http://grafana.org
 Buildroot: 	   %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 Source0:           %{name}-%{grafana_base_version}.tar.gz 
 Source1:	   install_%{name}.sh
