@@ -8,6 +8,7 @@ Type=simple
 ExecStart=/usr/lib/hadoop/libexec/hadoop-hdfs-datanode start
 ExecStop=/usr/lib/hadoop/libexec/hadoop-hdfs-datanode stop
 PIDFile=/var/run/hadoop-hdfs/hadoop-hdfs-datanode.pid
+SuccessExitStatus=143
 
 #######################################
 # Note: Below are cgroup options

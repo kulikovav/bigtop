@@ -8,6 +8,7 @@ Type=simple
 ExecStart=/usr/lib/hadoop/libexec/hadoop-hdfs-namenode start
 ExecStop=/usr/lib/hadoop/libexec/hadoop-hdfs-namenode stop
 PIDFile=/var/run/hadoop-hdfs/hadoop-hdfs-namenode.pid
+SuccessExitStatus=143
 
 #######################################
 # Note: Below are cgroup options

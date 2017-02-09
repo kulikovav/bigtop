@@ -7,7 +7,7 @@ After=NetworkManager.target
 Type=simple
 ExecStart=/usr/lib/hadoop/libexec/hadoop-hdfs-journalnode start
 ExecStop=/usr/lib/hadoop/libexec/hadoop-hdfs-journalnode stop
-PIDFile=/var/run/hadoop-hdfs/hadoop-hadoop-journalnode.pid
+PIDFile=/var/run/hadoop-hdfs/hadoop-hdfs-journalnode.pid
 
 #######################################
 # Note: Below are cgroup options
