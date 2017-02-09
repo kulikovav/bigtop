@@ -5,8 +5,8 @@ After=NetworkManager.target
 
 [Service]
 Type=simple
-ExecStart=/usr/lib/hadoop/libexec/hadoop-hdfs-datanode start
-ExecStop=/usr/lib/hadoop/libexec/hadoop-hdfs-datanode stop
+ExecStart=/usr/lib/hadoop/libexec/hadoop-hdfs-zkfc start
+ExecStop=/usr/lib/hadoop/libexec/hadoop-hdfs-zkfc stop
 PIDFile=/var/run/hadoop-hdfs/hadoop-hdfs-zkfc.pid
 SuccessExitStatus=143
 
